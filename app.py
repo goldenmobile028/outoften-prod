@@ -7,6 +7,9 @@ from flask import request
 import psycopg2
 import urlparse
 
+import logging
+from logging.handlers import RotatingFileHandler
+
 app = Flask(__name__)
 auto = Autodoc(app)
 #TODO decorate each endpoint with @auto.doc() to generate the docs 
@@ -35,7 +38,8 @@ db = SQLAlchemy(app)
 
 @app.route('/')
 def hello():
-    return 'Hello World!'
+	app.logger.info('Infohello')
+	return 'Hello World!'
     
 @app.route('/endpointone')
 def dummy1():

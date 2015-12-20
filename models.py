@@ -25,7 +25,6 @@
 #	def __repr__(self):
 #        return self.uuid	 
 
-#db.create_all()
 
 #Table that records a uuid associated with a photo id to avoid showing repeat photos 
 #exclusions = db.Table('exclusions',
