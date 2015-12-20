@@ -21,6 +21,16 @@ conn = psycopg2.connect(
     port=url.port
 )
 
+#Models
+
+#User object (device id)
+class User(db.Model):
+    uuid = db.Column(db.Integer, primary_key=True)
+
+db.create_all()
+
+#Routing
+
 @app.route('/')
 def hello():
     return 'Hello World!'
