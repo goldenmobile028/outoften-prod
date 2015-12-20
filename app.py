@@ -44,7 +44,7 @@ db = SQLAlchemy(app)
 #CATEGORY_TYPE_RANDOM		= 4
 
 
-User object (device id)
+#User object (device id)
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     uuid = db.Column(db.Integer)
