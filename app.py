@@ -13,7 +13,6 @@ auto = Autodoc(app)
 
 #Talk to postgres 
 #SQLALCHEMY_DATABASE_URI = os.environ['DATABASE_URL']
-#SQLALCHEMY_DATABASE_URI = os.environ['postgres://mhevgpfchwsopm:Ip8BtqNWSBzqsQralgNCFOm4Um@ec2-75-101-143-150.compute-1.amazonaws.com:5432/dckn2j5felndns']
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgres://mhevgpfchwsopm:Ip8BtqNWSBzqsQralgNCFOm4Um@ec2-75-101-143-150.compute-1.amazonaws.com:5432/dckn2j5felndns'
 
 db = SQLAlchemy(app)
@@ -47,15 +46,15 @@ db = SQLAlchemy(app)
 
 
 #User object (device id)
-#class User(db.Model):
-#    id = db.Column(db.Integer, primary_key=True)
-#    uuid = db.Column(db.Integer)
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    uuid = db.Column(db.Integer)
 
-#	def __init__(self, uuid):
-#		self.uuid = uuid
+	def __init__(self, uuid):
+		self.uuid = uuid
 	
-#	def __repr__(self):
-#        return self.uuid	 
+	def __repr__(self):
+        return self.uuid	 
 
 #db.create_all()
 
