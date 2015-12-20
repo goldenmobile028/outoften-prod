@@ -15,7 +15,6 @@ auto = Autodoc(app)
 SQLALCHEMY_DATABASE_URI = os.environ['DATABASE_URL']
 db = SQLAlchemy(app)
 
-
 #Postgres connection stuff  (according to heroku) 
 
 #urlparse.uses_netloc.append("postgres")
@@ -52,10 +51,10 @@ class User(db.Model):
 	def __init__(self, uuid):
 		self.uuid = uuid
 	
-	#represents object when we query 
 	def __repr__(self):
-        return '<User %r>' % self.uuid	 
+        return self.uuid	 
 
+db.create_all()
 
 #Table that records a uuid associated with a photo id to avoid showing repeat photos 
 #exclusions = db.Table('exclusions',
@@ -75,7 +74,6 @@ class User(db.Model):
 #    flag_status = db.Column(db.Integer)
     	   
 
-#db.create_all()
 
 #ENDPOINTS
 
