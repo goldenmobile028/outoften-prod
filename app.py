@@ -3,10 +3,23 @@ from flask import Flask
 from flask.ext.autodoc import Autodoc
 from flask import jsonify
 from flask import request 
+import psycopg2
+import urlparse
 
 app = Flask(__name__)
 auto = Autodoc(app)
 #decorate each endpoint with @auto.doc() to generate the docs 
+
+#urlparse.uses_netloc.append("postgres")
+#url = urlparse.urlparse(os.environ["DATABASE_URL"])
+
+#conn = psycopg2.connect(
+#    database=url.path[1:],
+#    user=url.username,
+#    password=url.password,
+#    host=url.hostname,
+#    port=url.port
+#)
 
 @app.route('/')
 def hello():
