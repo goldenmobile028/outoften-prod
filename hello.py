@@ -2,6 +2,7 @@ import os
 from flask import Flask
 from flask.ext.autodoc import Autodoc
 from flask import jsonify
+from flash import request 
 
 app = Flask(__name__)
 auto = Autodoc(app)
@@ -26,10 +27,10 @@ def dummy2():
 #	return jsonify(count=count)
 
 #Create photo record 
-@app.route('/v1/photos/')
-#def get_count():
-#	count = Count.
-#	return jsonify(count=count)
+@app.route('/v1/photos/', methods=['POST'])
+#def create_photo():
+#	write the method to create the record for the photo 
+#	return jsonify(photo_id=photo_id)
 
 #Provide list of scores 
 @app.route('/v1/photos/score')
@@ -66,5 +67,4 @@ def dummy2():
 def documentation():
     return auto.html()
     
-#app.debug = True
-#app.run()    	
+	
