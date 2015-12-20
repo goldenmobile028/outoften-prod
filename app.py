@@ -46,7 +46,7 @@ db = SQLAlchemy(app)
 
 
 #User object (device id)
-class User(db.Model):
+#class User(db.Model):
 #    id = db.Column(db.Integer, primary_key=True)
 #   uuid = db.Column(db.Integer)
 
