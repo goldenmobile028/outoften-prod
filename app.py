@@ -44,9 +44,18 @@ db = SQLAlchemy(app)
 #CATEGORY_TYPE_RANDOM		= 4
 
 
-#User object (device id)
-#class User(db.Model):
-#    uuid = db.Column(db.Integer, primary_key=True)
+User object (device id)
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    uuid = db.Column(db.Integer)
+    
+	def __init__(self, uuid):
+		self.uuid = uuid
+	
+	#represents object when we query 
+	def __repr__(self):
+        return '<User %r>' % self.uuid	 
+
 
 #Table that records a uuid associated with a photo id to avoid showing repeat photos 
 #exclusions = db.Table('exclusions',
