@@ -11,6 +11,11 @@ app = Flask(__name__)
 auto = Autodoc(app)
 #TODO decorate each endpoint with @auto.doc() to generate the docs 
 
+#Talk to postgres 
+SQLALCHEMY_DATABASE_URI = os.environ['DATABASE_URL']
+db = SQLAlchemy(app)
+
+
 #Postgres connection stuff  (according to heroku) 
 
 #urlparse.uses_netloc.append("postgres")
