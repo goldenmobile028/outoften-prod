@@ -27,7 +27,7 @@ conn = psycopg2.connect(
 class User(db.Model):
     uuid = db.Column(db.Integer, primary_key=True)
 
-db.create_all()
+#db.create_all()
 
 #Routing
 
