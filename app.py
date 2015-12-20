@@ -4,7 +4,6 @@ from flask_sqlalchemy import SQLAlchemy
 from flask.ext.autodoc import Autodoc
 from flask import jsonify
 from flask import request 
-#python driver for postgres 
 import psycopg2
 import urlparse
 
@@ -12,11 +11,12 @@ app = Flask(__name__)
 auto = Autodoc(app)
 #TODO decorate each endpoint with @auto.doc() to generate the docs 
 
-#Postgres connection stuff  
+#Postgres connection stuff  (according to heroku) 
 
 urlparse.uses_netloc.append("postgres")
 url = urlparse.urlparse(os.environ["DATABASE_URL"])
 
+#database connection 
 conn = psycopg2.connect(
     database=url.path[1:],
     user=url.username,
