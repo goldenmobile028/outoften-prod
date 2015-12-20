@@ -46,15 +46,15 @@ db = SQLAlchemy(app)
 
 
 #User object (device id)
-class User(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    uuid = db.Column(db.Integer)
+#class User(db.Model):
+#    id = db.Column(db.Integer, primary_key=True)
+#   uuid = db.Column(db.Integer)
 
-	def __init__(self, uuid):
-		self.uuid = uuid
+#	def __init__(self, uuid):
+#		self.uuid = uuid
 	
-	def __repr__(self):
-        return self.uuid	 
+#	def __repr__(self):
+#        return self.uuid	 
 
 #db.create_all()
 
