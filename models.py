@@ -1,3 +1,5 @@
+from app import db 
+
 #MODELS
 
 #FLAG_STATUS_NONE			= 0
