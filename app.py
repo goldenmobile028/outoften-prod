@@ -4,20 +4,68 @@ from flask_sqlalchemy import SQLAlchemy
 from flask.ext.autodoc import Autodoc
 from flask import jsonify
 from flask import request 
-import psycopg2
+#import psycopg2
 import urlparse
 
 import logging
-from logging.handlers import RotatingFileHandler
+import logging.handlers
 
+logger = logging.getLogger('kumologging')
+logger.setLevel(logging.DEBUG)
+ch = logging.StreamHandler()
+logger.addHandler(ch)
+#logger.info("print info")
+
+logger.info("Creating app...")
 app = Flask(__name__)
 auto = Autodoc(app)
-#TODO decorate each endpoint with @auto.doc() to generate the docs 
+
 
 #Talk to postgres 
 #SQLALCHEMY_DATABASE_URI = os.environ['DATABASE_URL']
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgres://mhevgpfchwsopm:Ip8BtqNWSBzqsQralgNCFOm4Um@ec2-75-101-143-150.compute-1.amazonaws.com:5432/dckn2j5felndns'
 db = SQLAlchemy(app)
+
+
+logger.info("Creating models...")
+
+class User(db.Model):
+	id = db.Column(db.Integer, primary_key=True)
+	uuid = db.Column(db.Integer)
+
+	def __init__(self, uuid):
+		self.uuid = uuid
+	
+	def __repr__(self):
+		return self.uuid
+
+class Photo(db.Model):
+	id = db.Column(db.Integer, primary_key=True)
+	image_url = db.Column(db.Text)
+	category = db.Column(db.Integer)
+	rating_sum = db.Column(db.Integer)
+	rating_total = db.Column(db.Integer)
+	creation_date = db.Column(db.DateTime)
+	flag_count_inappropriate = db.Column(db.Integer)
+	flag_count_miscategorized = db.Column(db.Integer)
+	flag_status = db.Column(db.Integer)
+    
+	def __init__(self, uuid):
+		self.uuid = uuid
+	
+	def __repr__(self):
+		return self.uuid
+
+
+logger.info("Connecting to postgres...")
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgres://mhevgpfchwsopm:Ip8BtqNWSBzqsQralgNCFOm4Um@ec2-75-101-143-150.compute-1.amazonaws.com:5432/dckn2j5felndns'
+db.create_all()
+db.session.commit()
+
+
+#TODO decorate each endpoint with @auto.doc() to generate the docs 
+
+logger.info("Done! Awaiting connections...")
+
 
 #Postgres connection stuff  (according to heroku) 
 
@@ -38,7 +86,6 @@ db = SQLAlchemy(app)
 
 @app.route('/')
 def hello():
-	app.logger.info('Infohello')
 	return 'Hello World!'
     
 @app.route('/endpointone')
