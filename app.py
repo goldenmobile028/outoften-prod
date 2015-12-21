@@ -4,7 +4,6 @@ from flask_sqlalchemy import SQLAlchemy
 from flask.ext.autodoc import Autodoc
 from flask import jsonify
 from flask import request 
-#import psycopg2
 import urlparse
 
 import logging
@@ -20,11 +19,8 @@ logger.info("Creating app...")
 app = Flask(__name__)
 auto = Autodoc(app)
 
-
 #Talk to postgres 
-#SQLALCHEMY_DATABASE_URI = os.environ['DATABASE_URL']
 db = SQLAlchemy(app)
-
 
 logger.info("Creating models...")
 
@@ -54,7 +50,11 @@ class Photo(db.Model):
 	
 	def __repr__(self):
 		return self.uuid
-
+		
+#Table that records a uuid associated with a photo id to avoid showing repeat photos 
+exclusions = db.Table('exclusions',
+	db.Column('uuid', db.Integer),
+	db.Column('photo_id', db.Integer))		
 
 logger.info("Connecting to postgres...")
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgres://mhevgpfchwsopm:Ip8BtqNWSBzqsQralgNCFOm4Um@ec2-75-101-143-150.compute-1.amazonaws.com:5432/dckn2j5felndns'
@@ -65,22 +65,6 @@ db.session.commit()
 #TODO decorate each endpoint with @auto.doc() to generate the docs 
 
 logger.info("Done! Awaiting connections...")
-
-
-#Postgres connection stuff  (according to heroku) 
-
-#urlparse.uses_netloc.append("postgres")
-#url = urlparse.urlparse(os.environ["DATABASE_URL"])
-
-#database connection 
-#conn = psycopg2.connect(
-#    database=url.path[1:],
-#    user=url.username,
-#    password=url.password,
-#    host=url.hostname,
-#    port=url.port
-#)
-
 
 #ENDPOINTS
 
