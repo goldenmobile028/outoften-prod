@@ -128,7 +128,7 @@ def dummy2():
 	return jsonify(endpoint2="hi",otherval=3)   
 	
 #Provide global photo count 
-@app.route('/v1/photos/count/')
+@app.route('/api/v1/photos/count/')
 @auto.doc()
 def get_count():
 	count = db.session.query(db.func.count(Photo.id)).scalar()
@@ -137,7 +137,7 @@ def get_count():
 #Create photo record
 #TODO image_url = get it and do AWS
 #We need to store the owner of the photo so that people are not shown their own?
-@app.route('/v1/photos/', methods=['POST'])
+@app.route('/api/v1/photos/', methods=['POST'])
 def create_photo():
 	content = request.get_json(force=True)
 	image_url = "http://i.kinja-img.com/gawker-media/image/upload/s--pEKSmwzm--/c_scale,fl_progressive,q_80,w_800/1414228815325188681.jpg"
@@ -150,7 +150,7 @@ def create_photo():
 
 #Provide list of scores
 #TODO: Parse the formatting that comes from getlist 
-@app.route('/v1/photos/score/', methods=['GET'])
+@app.route('/api/v1/photos/score/', methods=['GET'])
 def get_scores():
 	scorelist = []
 	p("l1")
@@ -175,7 +175,7 @@ def get_scores():
 	 
 #Delete photos
 #Note: This function currently allows photos to be flagged for deletion more than once.   
-@app.route('/v1/photos/delete_photo', methods=['POST'])
+@app.route('/api/v1/photos/delete_photo', methods=['POST'])
 def delete_photo():
 	content = request.get_json(force=True)
 	photo_id = content["photo_id"]
@@ -186,7 +186,7 @@ def delete_photo():
 	return jsonify(status=200)
 
 #Submit a rating 
-@app.route('/v1/photos/rate/', methods=['POST'])
+@app.route('/api/v1/photos/rate/', methods=['POST'])
 def submit_rating():
 	p("0")
 	content = request.get_json(force=True)
@@ -209,7 +209,7 @@ def submit_rating():
 #TODO: handle exclusion when uuid exists 
 #TODO: hide deleted photos 
 #TOTO: hide users own photos 
-@app.route('/v1/photos/photo_list/', methods=['GET'])
+@app.route('/api/v1/photos/photo_list/', methods=['GET'])
 def get_photo_list():
 	photolist = []
 	uuid = request.args.get('uuid')
@@ -250,7 +250,7 @@ def get_photo_list():
 #Flagging 
 #TODO: Handle alerting the admin interface 
 #TODO: Handle the autobanning  
-@app.route('/v1/photos/flag/', methods=["POST"])
+@app.route('/api/v1/photos/flag/', methods=["POST"])
 def flag_photo():
 	p("1")
 	content = request.get_json(force=True)
