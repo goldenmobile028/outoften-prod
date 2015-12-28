@@ -13,6 +13,7 @@ import logging.handlers
 import logging.config
 import time
 import json
+from flask.ext.cors import CORS
 
 LOGGING = {
     'version': 1,
@@ -41,6 +42,7 @@ def p(*args):
 #Create App
 p("Creating app...")
 app = Flask(__name__)
+CORS(app)
 #app.debug = True	# TODO: remove this on prod
 auto = Autodoc(app)
 db = SQLAlchemy(app)
@@ -269,7 +271,7 @@ def flag_photo():
 	return jsonify(status=200)
 	
 #Submit Moderation (Admin Interface) 
-@app.route('/api/v1/admin/submit_moderation/', methods=["GET"])
+@app.route('/api/v1/admin/submit_moderation/', methods=["POST"])
 @auto.doc()
 def submit_moderation():
 	content = request.get_json(force=True)
@@ -287,7 +289,7 @@ def submit_moderation():
 	return jsonify(status=status) 
 	
 #Log In (Admin Interface) 
-@app.route('/api/v1/admin/login/', methods=["GET"])
+@app.route('/api/v1/admin/login/', methods=["POST"])
 @auto.doc()
 def login():
 	content = request.get_json(force=True)
@@ -300,7 +302,7 @@ def login():
 	return jsonify(status=status)
 	
 #Gets list of photos to moderate (Admin Interface)
-@app.route('/api/v1/admin/flagged_list/', methods=['GET'])
+@app.route('/api/v1/admin/flagged_list/', methods=['POST'])
 @auto.doc()
 def get_flagged_list():
 	flagged_list = []
