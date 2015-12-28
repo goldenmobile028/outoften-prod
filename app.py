@@ -149,9 +149,31 @@ def create_photo():
 	content = request.get_json(force=True)
 	image_url = "http://i.kinja-img.com/gawker-media/image/upload/s--pEKSmwzm--/c_scale,fl_progressive,q_80,w_800/1414228815325188681.jpg"
 	category = content["category"]
+	uuid = content["uuid"]
+	
+	#create photo record	
 	photo = Photo(image_url, category)
 	db.session.add(photo)
 	db.session.commit()
+	photo_id = photo.id
+	
+	#find or create user 
+	user_check = db.session.query(User).filter(User.uuid == uuid)
+	user_exists = db.session.query(literal(True)).filter(user_check.exists()).scalar()
+
+	if user_exists:
+		pass
+	else:
+		#create user
+		user = User(uuid)
+		db.session.add(user)
+		db.session.commit()
+		uuid = user.uuid
+	
+	#store photos in exclusion table
+	exclusion = Exclude(photo_id, uuid)
+	db.session.add(exclusion)
+	db.session.commit()	
 	return jsonify(photo_id=photo.id)
 
 
@@ -197,59 +219,54 @@ def submit_rating():
 	db.session.commit()	
 	return jsonify(updated_rating=photo.rating_sum, updated_total=photo.rating_total) 
 
-#Gets list of photos to rate with exclusion filter
-#TODO: handle exclusion filter if necessary 
-#TODO: do not show deleted photos 
-#TODO, LOW PRIORITY: hide users own photos?
+#Gets list of photos to rate with exclusion filter 
 @app.route('/api/v1/photos/photo_list/', methods=['GET'])
 @auto.doc()
 def get_photo_list():
 	photo_list = []
-	exclude_in_future = []
+	retrieved_photo_ids = []
 	entry = []
 	keys = ["photo_id", "image_url", "category", "rating_sum", "rating_total"]
 	uuid = request.args.get('uuid')
 	user_check = db.session.query(User).filter(User.uuid == uuid)
 	user_exists = db.session.query(literal(True)).filter(user_check.exists()).scalar()
+	querySize = 2
+	photos = None
+
 	if user_exists:
-		p("user exists, number:")
-		p(uuid)
 		#get exc list
-		p("looking for current_exclusions")
-		current_exclusions_tuples = db.session.query(Exclude.photo_id).filter(Exclude.uuid == uuid).all()
-		current_exclusions = [exclusion[0] for exclusion in current_exclusions_tuples]
-		p("the exclusions are:")
-		p(current_exclusions)
-		condition = "(~Photo.id.any(id.in_(current_exclusions)))"	
-		p("getting new photos:")
-		new_photos= db.session.query(Photo.id, Photo.image_url, Photo.category, Photo.rating_sum, Photo.rating_total, Photo.flag_status).filter(Photo.flag_status != 3 and Photo.flag_status != 4 and Photo.deletion_status != 1 and condition).order_by(func.random()).limit(10).all()
-		#save these photos for exclusion list in future
-		for record in new_photos:
-			exclude_in_future.append(record[0])
-			entry = dict(zip(keys, record))
-			p(entry)
-			photo_list.append(entry)	
+		excluded_photo_id_tuples = db.session.query(Exclude.photo_id).filter(Exclude.uuid == uuid).all()
+		excluded_photo_ids = [tuple[0] for tuple in excluded_photo_id_tuples]
+		#get photos
+		q = db.session.query(Photo.id, Photo.image_url, Photo.category, Photo.rating_sum, Photo.rating_total, Photo.flag_status)
+		q = q.filter(Photo.flag_status != 3 and Photo.flag_status != 4 and Photo.deletion_status != 1)
+		q = q.filter(Photo.id.notin_(excluded_photo_ids))
+		q = q.order_by(func.random())
+		q = q.limit(querySize)
+		photos = q.all()
 	else:
 		#create user
 		user = User(uuid)
 		db.session.add(user)
 		db.session.commit()
-		#get list of random photos
-		new_photos= db.session.query(Photo.id, Photo.image_url, Photo.category, Photo.rating_sum, Photo.rating_total).order_by(func.random()).limit(2).all()
-		#make list of photos and save them for exclusion list
-		for record in new_photos:
-			exclude_in_future.append(record[0])
-			entry = dict(zip(keys, record))
+		#get photos
+		q = db.session.query(Photo.id, Photo.image_url, Photo.category, Photo.rating_sum, Photo.rating_total)
+		q = q.order_by(func.random())
+		q = q.limit(querySize)
+		photos = q.all()
+	
+	#make list of photos and save them for exclusion list
+	for photo in photos:
+			retrieved_photo_ids.append(photo[0])
+			entry = dict(zip(keys, photo))
 			p(entry)
 			photo_list.append(entry)
+	
 	#store photos in exclusion table
-	p(exclude_in_future)
-	objects = []
-	for photo in exclude_in_future:
-		p("entered for loop")
-		new_exclusion = Exclude(uuid, photo)
+	for photo_id in retrieved_photo_ids:
+		new_exclusion = Exclude(uuid, photo_id)
 		db.session.add(new_exclusion)
-		db.session.commit()
+		db.session.commit()	
 	return json.dumps(photo_list)	
 
 #Flagging 
