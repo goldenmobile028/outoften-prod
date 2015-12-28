@@ -13,7 +13,7 @@ import logging.handlers
 import logging.config
 import time
 import json
-from flask.ext.cors import CORS
+from flask.ext.cors import CORS, cross_origin
 
 LOGGING = {
     'version': 1,
@@ -42,8 +42,8 @@ def p(*args):
 #Create App
 p("Creating app...")
 app = Flask(__name__)
-CORS(app)
-#app.debug = True	# TODO: remove this on prod
+cors = CORS(app)
+app.config['CORS_HEADERS'] = 'Content-Type'
 auto = Autodoc(app)
 db = SQLAlchemy(app)
 
@@ -220,9 +220,9 @@ def get_photo_list():
 		current_exclusions = [exclusion[0] for exclusion in current_exclusions_tuples]
 		p("the exclusions are:")
 		p(current_exclusions)
-		#(~Photo.id.any(Photo.id.in_(current_exclusions)))	
+		condition = (~Photo.id.any(Photo.id.in_(current_exclusions)))	
 		p("getting new photos:")
-		new_photos= db.session.query(Photo.id, Photo.image_url, Photo.category, Photo.rating_sum, Photo.rating_total, Photo.flag_status).filter(Photo.flag_status != 3 and Photo.flag_status != 4 and Photo.deletion_status != 1).order_by(func.random()).limit(10).all()
+		new_photos= db.session.query(Photo.id, Photo.image_url, Photo.category, Photo.rating_sum, Photo.rating_total, Photo.flag_status).filter(Photo.flag_status != 3 and Photo.flag_status != 4 and Photo.deletion_status != 1 and condition).order_by(func.random()).limit(10).all()
 		#save these photos for exclusion list in future
 		for record in new_photos:
 			exclude_in_future.append(record[0])
@@ -272,6 +272,7 @@ def flag_photo():
 	
 #Submit Moderation (Admin Interface) 
 @app.route('/api/v1/admin/submit_moderation/', methods=["POST"])
+@cross_origin()
 @auto.doc()
 def submit_moderation():
 	content = request.get_json(force=True)
@@ -290,6 +291,7 @@ def submit_moderation():
 	
 #Log In (Admin Interface) 
 @app.route('/api/v1/admin/login/', methods=["POST"])
+@cross_origin()
 @auto.doc()
 def login():
 	content = request.get_json(force=True)
@@ -303,6 +305,7 @@ def login():
 	
 #Gets list of photos to moderate (Admin Interface)
 @app.route('/api/v1/admin/flagged_list/', methods=['POST'])
+@cross_origin()
 @auto.doc()
 def get_flagged_list():
 	flagged_list = []
