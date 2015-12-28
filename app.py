@@ -63,6 +63,9 @@ CATEGORY_TYPE_RANDOM			= 3
 DELETION_STATUS_NONE			= 0
 DELETION_STATUS_MARKED			= 1
 
+USERNAME						= "admin"
+PASSWORD						= "outoften"
+
 class User(db.Model):
 	id = db.Column(db.Integer, primary_key=True)
 	uuid = db.Column(db.Integer)
@@ -102,7 +105,17 @@ class Photo(db.Model):
 #Table that records a uuid associated with a photo id to avoid showing repeat photos 
 exclusions = db.Table('exclusions',
 	db.Column('uuid', db.Integer),
-	db.Column('photo_id', db.Integer))		
+	db.Column('photo_id', db.Integer))	
+	
+#Testing this new table
+class Exclude(db.Model):
+	id = db.Column(db.Integer, primary_key=True)
+	uuid = db.Column(db.Integer)
+	photo_id = db.Column(db.Integer)
+
+	def __init__(self, uuid, photo_id):
+		self.uuid = uuid
+		self.photo_id = photo_id		
 
 #Connect to postgres
 p("Connecting to postgres...")
@@ -113,19 +126,11 @@ db.session.commit()
 p("Done! Awaiting connections...")
 
 #ENDPOINTS
-#TODO decorate each endpoint with @auto.doc() to generate the docs 
+#TODO: Handle the autobanning
 
 @app.route('/')
 def hello():
-	return 'Hello World!'
-    
-@app.route('/endpointone')
-def dummy1():
-	return 'Endpoint 1'
-	
-@app.route('/endpointtwo')
-def dummy2():
-	return jsonify(endpoint2="hi",otherval=3)   
+	return 'Welcome to 0ut of 10'   
 	
 #Provide global photo count 
 @app.route('/api/v1/photos/count/')
@@ -135,9 +140,9 @@ def get_count():
 	return jsonify(count=count)	
 
 #Create photo record
-#TODO image_url = get it and do AWS
-#We need to store the owner of the photo so that people are not shown their own?
+#TODO AWS integration
 @app.route('/api/v1/photos/', methods=['POST'])
+@auto.doc()
 def create_photo():
 	content = request.get_json(force=True)
 	image_url = "http://i.kinja-img.com/gawker-media/image/upload/s--pEKSmwzm--/c_scale,fl_progressive,q_80,w_800/1414228815325188681.jpg"
@@ -148,34 +153,26 @@ def create_photo():
 	return jsonify(photo_id=photo.id)
 
 
-#Provide list of scores
-#TODO: Parse the formatting that comes from getlist 
+#Get list of scores
 @app.route('/api/v1/photos/score/', methods=['GET'])
+@auto.doc()
 def get_scores():
 	scorelist = []
-	p("l1")
 	photolist = request.values.getlist('photo_id')
-	p(photolist)
 	for photo_id in photolist:
 		photo = Photo.query.get(photo_id)
-		p(photo)
-		s = photo.rating_sum
-		p(s)
-		t = photo.rating_total
-		p(t)
-		if t == 0:
+		total = photo.rating_total
+		if total == 0:
 			score = {photo_id:0}
 		else:
-			score = {photo_id:float(s/t)}
-		p(score)
-		scorelist.append(score)
-		p(scorelist) 	
-	json.dumps(scorelist)	
-	return "hello"
+			sum = photo.rating_sum
+			score = {photo_id:float(sum/total)}
+		scorelist.append(score) 	
+	return json.dumps(scorelist)	
 	 
 #Delete photos
-#Note: This function currently allows photos to be flagged for deletion more than once.   
 @app.route('/api/v1/photos/delete_photo', methods=['POST'])
+@auto.doc()
 def delete_photo():
 	content = request.get_json(force=True)
 	photo_id = content["photo_id"]
@@ -187,93 +184,157 @@ def delete_photo():
 
 #Submit a rating 
 @app.route('/api/v1/photos/rate/', methods=['POST'])
+@auto.doc()
 def submit_rating():
-	p("0")
 	content = request.get_json(force=True)
-	p("0.5")
 	photo_id = content["photo_id"]
-	p("1")
 	rating = content["rating"]
-	p("1.5")
 	photo = Photo.query.get(photo_id)
-	p("2")
 	photo.rating_sum = photo.rating_sum + rating 
-	p("3")
 	photo.rating_total = photo.rating_total + 1
-	p("4")
 	db.session.commit()	
 	return jsonify(updated_rating=photo.rating_sum, updated_total=photo.rating_total) 
 
-#Get list of photos to rate 
-#TODO: need to get the actual rows of interest for the photo objects
-#TODO: handle exclusion when uuid exists 
-#TODO: hide deleted photos 
-#TOTO: hide users own photos 
+#Gets list of photos to rate with exclusion filter
+#TODO: handle exclusion filter if necessary 
+#TODO: do not show deleted photos 
+#TODO, LOW PRIORITY: hide users own photos?
 @app.route('/api/v1/photos/photo_list/', methods=['GET'])
+@auto.doc()
 def get_photo_list():
-	photolist = []
+	photo_list = []
+	exclude_in_future = []
+	entry = []
+	keys = ["photo_id", "image_url", "category", "rating_sum", "rating_total"]
 	uuid = request.args.get('uuid')
-	p(uuid)
-	q = db.session.query(User).filter(User.uuid == uuid)
-	p("did the query")
-	x = db.session.query(literal(True)).filter(q.exists()).scalar()
-	p("stored the exists variable")
-	p(x)
-	if x:
-		p("user exists")
+	user_check = db.session.query(User).filter(User.uuid == uuid)
+	user_exists = db.session.query(literal(True)).filter(user_check.exists()).scalar()
+	if user_exists:
+		p("user exists, number:")
+		p(uuid)
 		#get exc list
-		f = db.session.query(exclusions).filter(exlusions.uuid == uuid)
-		#g = db.session.query(literal(True)).filter(f.exists()).scalar() 
-		p("did the query")
-		p(f)
-		#return photos not on list
+		p("looking for current_exclusions")
+		current_exclusions_tuples = db.session.query(Exclude.photo_id).filter(Exclude.uuid == uuid).all()
+		current_exclusions = [exclusion[0] for exclusion in current_exclusions_tuples]
+		p("the exclusions are:")
+		p(current_exclusions)	
+		#create the condition to exclude these photos 
+		condition = and_(*[Photo.id.contains(id) for id in current_exclusions])
+		p("getting new photos:")
+		new_photos= db.session.query(Photo.id, Photo.image_url, Photo.category, Photo.rating_sum, Photo.rating_total, Photo.flag_status).filter(Photo.flag_status != 3 and Photo.flag_status != 4 and Photo.deletion_status != 1).order_by(func.random()).limit(10).all()
+		#save these photos for exclusion list in future
+		for record in new_photos:
+			exclude_in_future.append(record[0])
+			entry = dict(zip(keys, record))
+			p(entry)
+			photo_list.append(entry)	
 	else:
 		#create user
-		p("the user is new")
 		user = User(uuid)
-		p("made the user object")
 		db.session.add(user)
-		p("added")
 		db.session.commit()
-		p("committed")
-		#get rando list
-		z= db.session.query(Photo.id, Photo.image_url, Photo.category, Photo.rating_sum, Photo.rating_total).order_by(func.random()).limit(2).all()
-		p("made query")
-		p(z)
-		#TODO: make this list of lists of values (no keys) into something I can return with JSON
-		#TODO: add the photos in the list to the exclusion for this new user 
-		#photolist = photolist.extend()
-		#p(photolist) 
-	#return jsonify(photolist=photolist)	
-	return "hello"
+		#get list of random photos
+		new_photos= db.session.query(Photo.id, Photo.image_url, Photo.category, Photo.rating_sum, Photo.rating_total).order_by(func.random()).limit(2).all()
+		#make list of photos and save them for exclusion list
+		for record in new_photos:
+			exclude_in_future.append(record[0])
+			entry = dict(zip(keys, record))
+			p(entry)
+			photo_list.append(entry)
+	#store photos in exclusion table
+	p(exclude_in_future)
+	objects = []
+	for photo in exclude_in_future:
+		p("entered for loop")
+		new_exclusion = Exclude(uuid, photo)
+		db.session.add(new_exclusion)
+		db.session.commit()
+	return json.dumps(photo_list)	
 
 #Flagging 
-#TODO: Handle alerting the admin interface 
-#TODO: Handle the autobanning  
 @app.route('/api/v1/photos/flag/', methods=["POST"])
+@auto.doc()
 def flag_photo():
-	p("1")
 	content = request.get_json(force=True)
 	photo_id = content['photo_id']
-	p("2")
-	category = content['category']
-	p("3")
+	category = content['flag_category']
 	photo = Photo.query.get(photo_id)
-	p("4")
 	if category == 1:
 		photo.flag_count_miscategorized = photo.flag_count_miscategorized + 1
-		p(photo.flag_count_miscategorized)
 	elif category == 2:
 		photo.flag_count_inappropriate = photo.flag_count_inappropriate + 1
-		p(photo.flag_count_inappropriate)
 	else:
 		photo.flag_count_spam = photo.flag_count_spam + 1
-		p(photo.flag_count_spam)
+	photo.flag_status = FLAG_STATUS_AWAITING_REVIEW
 	db.session.commit()
-	return jsonify(status=200) 	 
+	return jsonify(status=200)
+	
+#Submit Moderation (Admin Interface) 
+@app.route('/api/v1/admin/submit_moderation/', methods=["POST"])
+@auto.doc()
+def submit_moderation():
+	content = request.get_json(force=True)
+	username = content["username"]
+	password = content["password"]
+	if username == USERNAME and password == PASSWORD:
+		photo_id = content["photo_id"]
+		flag_status = content ["flag_status"]
+		photo = Photo.query.get(photo_id)
+		photo.flag_status = flag_status
+		db.session.commit()
+		status = 200
+	else:
+		status = "bad credentials"		
+	return jsonify(status=status) 
+	
+#Log In (Admin Interface) 
+@app.route('/api/v1/admin/login/', methods=["POST"])
+@auto.doc()
+def login():
+	content = request.get_json(force=True)
+	username = content["username"]
+	password = content["password"]
+	if username == USERNAME and password == PASSWORD:
+		status = 200
+	else:
+		status = "bad credentials"	
+	return jsonify(status=status)
+	
+#Gets list of photos to moderate (Admin Interface)
+@app.route('/api/v1/admin/flagged_list/', methods=['POST'])
+@auto.doc()
+def get_flagged_list():
+	flagged_list = []
+	entry = []
+	keys = ["photo_id", "image_url", "category", "flag_count_inappropriate", "flag_count_miscategorized", "flag_count_spam"]
+	content = request.get_json(force=True)
+	username = content["username"]
+	password = content["password"]
+	if username == USERNAME and password == PASSWORD:
+		p("logged in")
+		q = db.session.query(Photo.id, Photo.image_url, Photo.category, Photo.flag_count_inappropriate, Photo.flag_count_miscategorized, Photo.flag_count_spam).filter_by(flag_status=FLAG_STATUS_AWAITING_REVIEW).all()
+		p("queried:")
+		p(q)
+		for record in q:
+			p("entered for loop")
+			entry = dict(zip(keys, record))
+			p("dict:")
+			p(entry)
+			flagged_list.append(entry)
+			p("appending items")
+			p(flagged_list)
+		if len(flagged_list) == 0:
+			flagged_list = {"photos" : "none"}
+		else:
+			pass 				
+	else:
+		flagged_list = {"status": "bad credentials"}
+	return json.dumps(flagged_list)		 	
+	 	 
 
+#TODO: Add descriptions and arguments to the generated html (not happening automatically)
 #Documentation Auto-generator 	
-@app.route('/documentation')
+@app.route('/api/v1/documentation')
 def documentation():
     return auto.html()
     
