@@ -217,9 +217,8 @@ def get_photo_list():
 		current_exclusions_tuples = db.session.query(Exclude.photo_id).filter(Exclude.uuid == uuid).all()
 		current_exclusions = [exclusion[0] for exclusion in current_exclusions_tuples]
 		p("the exclusions are:")
-		p(current_exclusions)	
-		#create the condition to exclude these photos 
-		condition = and_(*[Photo.id.contains(id) for id in current_exclusions])
+		p(current_exclusions)
+		#(~Photo.id.any(Photo.id.in_(current_exclusions)))	
 		p("getting new photos:")
 		new_photos= db.session.query(Photo.id, Photo.image_url, Photo.category, Photo.rating_sum, Photo.rating_total, Photo.flag_status).filter(Photo.flag_status != 3 and Photo.flag_status != 4 and Photo.deletion_status != 1).order_by(func.random()).limit(10).all()
 		#save these photos for exclusion list in future
@@ -270,7 +269,7 @@ def flag_photo():
 	return jsonify(status=200)
 	
 #Submit Moderation (Admin Interface) 
-@app.route('/api/v1/admin/submit_moderation/', methods=["POST"])
+@app.route('/api/v1/admin/submit_moderation/', methods=["GET"])
 @auto.doc()
 def submit_moderation():
 	content = request.get_json(force=True)
@@ -288,7 +287,7 @@ def submit_moderation():
 	return jsonify(status=status) 
 	
 #Log In (Admin Interface) 
-@app.route('/api/v1/admin/login/', methods=["POST"])
+@app.route('/api/v1/admin/login/', methods=["GET"])
 @auto.doc()
 def login():
 	content = request.get_json(force=True)
@@ -301,7 +300,7 @@ def login():
 	return jsonify(status=status)
 	
 #Gets list of photos to moderate (Admin Interface)
-@app.route('/api/v1/admin/flagged_list/', methods=['POST'])
+@app.route('/api/v1/admin/flagged_list/', methods=['GET'])
 @auto.doc()
 def get_flagged_list():
 	flagged_list = []
