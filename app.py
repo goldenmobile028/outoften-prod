@@ -220,7 +220,7 @@ def get_photo_list():
 		current_exclusions = [exclusion[0] for exclusion in current_exclusions_tuples]
 		p("the exclusions are:")
 		p(current_exclusions)
-		condition = (~Photo.id.any(Photo.id.in_(current_exclusions)))	
+		condition = "(~Photo.id.any(id.in_(current_exclusions)))"	
 		p("getting new photos:")
 		new_photos= db.session.query(Photo.id, Photo.image_url, Photo.category, Photo.rating_sum, Photo.rating_total, Photo.flag_status).filter(Photo.flag_status != 3 and Photo.flag_status != 4 and Photo.deletion_status != 1 and condition).order_by(func.random()).limit(10).all()
 		#save these photos for exclusion list in future
