@@ -240,7 +240,7 @@ def create_photo():
 		
 	photo_id = create_photo_record(uuid, image_url, category)
 	
-	return jsonify(photo_id=photo.id)
+	return jsonify(photo_id=photo_id)
 	
 
 #Get list of scores
