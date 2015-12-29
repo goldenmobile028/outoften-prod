@@ -205,7 +205,7 @@ def delete_photo():
 	photo.deletion_status = DELETION_STATUS_MARKED
 	photo.deletion_timestamp = time.time()
 	db.session.commit()
-	return jsonify(status=200)
+	return jsonify(status="ok")
 
 #Submit a rating 
 @app.route('/api/v1/photos/rate/', methods=['POST'])
@@ -295,7 +295,7 @@ def flag_photo():
 			photo.flag_count_spam = photo.flag_count_spam + 1
 		photo.flag_status = FLAG_STATUS_AWAITING_REVIEW
 	db.session.commit()
-	return jsonify(status=200)
+	return jsonify(status="ok")
 	
 #Submit Moderation (Admin Interface) 
 @app.route('/api/v1/admin/submit_moderation/', methods=["POST"])
@@ -311,7 +311,7 @@ def submit_moderation():
 		photo = Photo.query.get(photo_id)
 		photo.flag_status = flag_status
 		db.session.commit()
-		status = 200
+		status = "ok"
 	else:
 		status = "bad credentials"		
 	return jsonify(status=status) 
@@ -325,7 +325,7 @@ def login():
 	username = content["username"]
 	password = content["password"]
 	if username == USERNAME and password == PASSWORD:
-		status = 200
+		status = "ok"
 	else:
 		status = "bad credentials"	
 	return jsonify(status=status)
@@ -337,30 +337,46 @@ def login():
 def get_flagged_list():
 	flagged_list = []
 	entry = []
+	output = {}
 	keys = ["photo_id", "image_url", "category", "flag_count_inappropriate", "flag_count_miscategorized", "flag_count_spam"]
+	
 	content = request.get_json(force=True)
 	username = content["username"]
 	password = content["password"]
+	
 	if username == USERNAME and password == PASSWORD:
 		p("logged in")
-		q = db.session.query(Photo.id, Photo.image_url, Photo.category, Photo.flag_count_inappropriate, Photo.flag_count_miscategorized, Photo.flag_count_spam).filter_by(flag_status=FLAG_STATUS_AWAITING_REVIEW).all()
+		q = db.session.query(Photo.id, Photo.image_url, Photo.category, Photo.flag_count_inappropriate, Photo.flag_count_miscategorized, Photo.flag_count_spam).filter_by(flag_status=FLAG_STATUS_AWAITING_REVIEW)
+		flagged_items_result = q.all()
 		p("queried:")
 		p(q)
-		for record in q:
+		
+		for flagged_item in flagged_items_result:
 			p("entered for loop")
-			entry = dict(zip(keys, record))
+			entry = dict(zip(keys, flagged_item))
 			p("dict:")
 			p(entry)
 			flagged_list.append(entry)
 			p("appending items")
 			p(flagged_list)
+		
 		if len(flagged_list) == 0:
-			flagged_list = {"photos" : "none"}
+			p("the flag list is empty")
+			status = "ok"
+			output = {"status": status, "photos": flagged_list} 
+			#output = dict([("status" : status), ("photos" : flagged_list)])
+			p(output)
 		else:
-			pass 				
+			p("the flag list is not empty")
+			status = "ok"
+			output = {"status": status, "photos": flagged_list} 
+			#output = dict([("status" : status), ("photos" : flagged_list)])
+			p(output)				
 	else:
-		flagged_list = {"status": "bad credentials"}
-	return json.dumps(flagged_list)		 	
+		output = {"status": "bad credentials"}
+		#output = dict("status" : "bad credentials")
+	
+	return json.dumps(output)		 	
 	 	 
 
 #TODO: Add descriptions and arguments to the generated html (not happening automatically)
