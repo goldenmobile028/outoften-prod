@@ -34,7 +34,7 @@ logging.config.dictConfig(LOGGING)
 
 
 def p(*args):
-	return
+	#return
 	#logging.info(args[0] % (len(args) > 1 and args[1:] or []))
 	logging.info(*args)
 	sys.stdout.flush()
@@ -67,7 +67,7 @@ DELETION_STATUS_NONE			= 0
 DELETION_STATUS_MARKED			= 1
 
 USERNAME						= "admin"
-PASSWORD						= "outoften"
+PASSWORD						= os.getenv('ADMIN_PASS', "outoften")
 
 class User(db.Model):
 	id = db.Column(db.Integer, primary_key=True)
@@ -130,8 +130,6 @@ p("Done! Awaiting connections...")
 
 def populateDatabase():
 	for i in range(0,50):
-		p("round:")
-		p(i)
 		category = 1
 		image_url = "http://i.kinja-img.com/gawker-media/image/upload/s--pEKSmwzm--/c_scale,fl_progressive,q_80,w_800/1414228815325188681.jpg"
 		photo = Photo(image_url, category)
@@ -140,8 +138,6 @@ def populateDatabase():
 		photo.flag_count_miscategorized = 4
 		photo.flag_status = FLAG_STATUS_AWAITING_REVIEW
 		photo_id = photo.id
-		p("the photo id is:")
-		p(photo_id)
 		db.session.commit()
 	return "done"	
 
@@ -282,7 +278,6 @@ def get_photo_list():
 	for photo in photos:
 			retrieved_photo_ids.append(photo[0])
 			entry = dict(zip(keys, photo))
-			p(entry)
 			photo_list.append(entry)
 	
 	#store photos in exclusion table
@@ -312,20 +307,16 @@ def flag_photo():
 		photo.flag_count_spam = photo.flag_count_spam + 1
 	
 	all_flags_count = photo.flag_count_miscategorized + photo.flag_count_inappropriate + photo.flag_count_spam
-	p("all_flags_count:")
-	p(all_flags_count)
 	
 	if all_flags_count >= 3:
 		if ((now - creation_time) <= (10*60)):
 			#photo.flag_status = FLAG_STATUS_AUTOBANNED
 			photo.flag_status = FLAG_STATUS_AWAITING_REVIEW
-			p("autobanned")
 		else:	
 			photo.flag_status = FLAG_STATUS_AWAITING_REVIEW
-			p("awating")
 	else:
+		pass
 		#photo.flag_status = FLAG_STATUS_NONE
-		p("not flagged")
 	db.session.commit()
 	return jsonify(status="ok")
 	
@@ -378,34 +369,22 @@ def get_flagged_list():
 	password = content["password"]
 	
 	if username == USERNAME and password == PASSWORD:
-		p("logged in")
 		q = db.session.query(Photo.id, Photo.image_url, Photo.category, Photo.flag_count_inappropriate, Photo.flag_count_miscategorized, Photo.flag_count_spam).filter_by(flag_status=FLAG_STATUS_AWAITING_REVIEW)
 		q = q.limit(querySize)
 		flagged_items_result = q.all()
-		p("queried:")
-		p(q)
 		
 		for flagged_item in flagged_items_result:
-			p("entered for loop")
 			entry = dict(zip(keys, flagged_item))
-			p("dict:")
-			p(entry)
 			flagged_list.append(entry)
-			p("appending items")
-			p(flagged_list)
 		
 		if len(flagged_list) == 0:
-			p("the flag list is empty")
 			status = "ok"
 			output = {"status": status, "photos": flagged_list} 
 			#output = dict([("status" : status), ("photos" : flagged_list)])
-			p(output)
 		else:
-			p("the flag list is not empty")
 			status = "ok"
 			output = {"status": status, "photos": flagged_list} 
 			#output = dict([("status" : status), ("photos" : flagged_list)])
-			p(output)				
 	else:
 		output = {"status": "bad credentials"}
 		#output = dict("status" : "bad credentials")
