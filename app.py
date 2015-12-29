@@ -14,6 +14,7 @@ import logging.config
 import time
 import json
 from flask.ext.cors import CORS, cross_origin
+from random import random.randint
 
 LOGGING = {
     'version': 1,
@@ -67,7 +68,7 @@ DELETION_STATUS_NONE			= 0
 DELETION_STATUS_MARKED			= 1
 
 USERNAME						= "admin"
-PASSWORD						= os.getenv('ADMIN_PASS', "outoften")
+PASSWORD						= os.environ['ADMIN_PASS']
 
 class User(db.Model):
 	id = db.Column(db.Integer, primary_key=True)
@@ -122,7 +123,7 @@ class Exclude(db.Model):
 
 #Connect to postgres
 p("Connecting to postgres...")
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgres://mhevgpfchwsopm:Ip8BtqNWSBzqsQralgNCFOm4Um@ec2-75-101-143-150.compute-1.amazonaws.com:5432/dckn2j5felndns'
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['POSTGRES_URL']
 db.create_all()
 db.session.commit()
 
@@ -130,18 +131,62 @@ p("Done! Awaiting connections...")
 
 def populateDatabase():
 	for i in range(0,50):
-		category = 1
-		image_url = "http://i.kinja-img.com/gawker-media/image/upload/s--pEKSmwzm--/c_scale,fl_progressive,q_80,w_800/1414228815325188681.jpg"
-		photo = Photo(image_url, category)
-		db.session.add(photo)
-		db.session.commit()
-		photo.flag_count_miscategorized = 4
-		photo.flag_status = FLAG_STATUS_AWAITING_REVIEW
-		photo_id = photo.id
-		db.session.commit()
-	return "done"	
+		uuid = "00001"
+		category = randint(0, 3)
+		image_url = "https://placekitten.com/200/" + str(randint(350,450))
+		photo_id = create_photo_record(uuid, image_url, category)
+		
+		photo = Photo.query.get(photo_id)
 
-#populateDatabase()
+		photo.flag_count_miscategorized = 0
+		photo.flag_count_inappropriate = 0
+		photo.flag_count_spam = 0
+		photo.flag_status = FLAG_STATUS_NONE
+		db.session.commit()
+
+	for i in range(0,50):
+		uuid = "00001"
+		category = randint(0, 3)
+		image_url = "https://placekitten.com/200/" + str(randint(350,450))
+		photo_id = create_photo_record(uuid, image_url, category)
+		
+		photo = Photo.query.get(photo_id)
+
+		photo.flag_count_miscategorized = randint(3,20)
+		photo.flag_count_inappropriate = randint(0,5)
+		photo.flag_count_spam = randint(0,5)
+		photo.flag_status = FLAG_STATUS_AWAITING_REVIEW
+		db.session.commit()
+
+	for i in range(0,50):
+		uuid = "00001"
+		category = randint(0, 3)
+		image_url = "https://placekitten.com/200/" + str(randint(350,450))
+		photo_id = create_photo_record(uuid, image_url, category)
+		
+		photo = Photo.query.get(photo_id)
+
+		photo.flag_count_miscategorized = randint(0,5)
+		photo.flag_count_inappropriate = randint(3,20)
+		photo.flag_count_spam = randint(0,5)
+		photo.flag_status = FLAG_STATUS_AWAITING_REVIEW
+		db.session.commit()
+
+	for i in range(0,50):
+		uuid = "00001"
+		category = randint(0, 3)
+		image_url = "https://placekitten.com/200/" + str(randint(350,450))
+		photo_id = create_photo_record(uuid, image_url, category)
+		
+		photo = Photo.query.get(photo_id)
+
+		photo.flag_count_miscategorized = randint(0,5)
+		photo.flag_count_inappropriate = randint(0,5)
+		photo.flag_count_spam = randint(3,20)
+		photo.flag_status = FLAG_STATUS_AWAITING_REVIEW
+		db.session.commit()
+
+populateDatabase()
 
 #ENDPOINTS
 #TODO: Handle the autobanning
@@ -169,7 +214,13 @@ def create_photo():
 		image_url = "https://placekitten.com/200/400"	
 	else:
 		image_url = content["image_url"]
+		
+	photo_id = create_photo_record(uuid, image_url, category)
 	
+	return jsonify(photo_id=photo.id)
+
+
+def create_photo_record(uuid, image_url, category):
 	#create photo record	
 	photo = Photo(image_url, category)
 	db.session.add(photo)
@@ -180,21 +231,19 @@ def create_photo():
 	user_check = db.session.query(User).filter(User.uuid == uuid)
 	user_exists = db.session.query(literal(True)).filter(user_check.exists()).scalar()
 
-	if user_exists:
-		pass
-	else:
+	if not user_exists:
 		#create user
 		user = User(uuid)
 		db.session.add(user)
 		db.session.commit()
-		uuid = user.uuid
 	
 	#store photos in exclusion table
 	exclusion = Exclude(photo_id, uuid)
 	db.session.add(exclusion)
-	db.session.commit()	
-	return jsonify(photo_id=photo.id)
-
+	db.session.commit()
+	
+	return photo_id
+	
 
 #Get list of scores
 @app.route('/api/v1/photos/score/', methods=['GET'])
