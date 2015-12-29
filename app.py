@@ -6,7 +6,8 @@ from sqlalchemy import func
 from sqlalchemy import literal
 from flask.ext.autodoc import Autodoc
 from flask import jsonify
-from flask import request 
+from flask import request
+from flask import send_from_directory 
 import urlparse
 import logging
 import logging.handlers
@@ -41,7 +42,7 @@ def p(*args):
 
 #Create App
 p("Creating app...")
-app = Flask(__name__)
+app = Flask(__name__, static_url_path='')
 cors = CORS(app)
 app.config['CORS_HEADERS'] = 'Content-Type'
 auto = Autodoc(app)
@@ -437,6 +438,21 @@ def get_flagged_list():
 	
 	return json.dumps(output)		 	
 	 	 
+@app.route('/admin/index.html')
+def send_admin():
+	return send_from_directory("admin", "index.html")
+	
+@app.route('/admin/css/<css>')
+def send_admin_css(css):
+	return send_from_directory("admin/css", css)
+	
+@app.route('/admin/img/<img>')
+def send_admin_img(img):
+	return send_from_directory("admin/img", img)	
+
+@app.route('/admin/src/<src>')
+def send_admin_src(src):
+	return send_from_directory("admin/src", src)				
 
 #TODO: Add descriptions and arguments to the generated html (not happening automatically)
 #Documentation Auto-generator 	
