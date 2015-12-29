@@ -147,8 +147,8 @@ def get_count():
 @auto.doc()
 def create_photo():
 	content = request.get_json(force=True)
-	#image_url = "http://i.kinja-img.com/gawker-media/image/upload/s--pEKSmwzm--/c_scale,fl_progressive,q_80,w_800/1414228815325188681.jpg"
-	image_url = "https://s3-us-west-1.amazonaws.com/outoften9604/placeholder.jpeg"
+	image_url = "http://i.kinja-img.com/gawker-media/image/upload/s--pEKSmwzm--/c_scale,fl_progressive,q_80,w_800/1414228815325188681.jpg"
+	#image_url = "https://s3-us-west-1.amazonaws.com/outoften9604/placeholder.jpeg"
 	category = content["category"]
 	uuid = content["uuid"]
 	
