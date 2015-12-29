@@ -34,6 +34,7 @@ logging.config.dictConfig(LOGGING)
 
 
 def p(*args):
+	return
 	#logging.info(args[0] % (len(args) > 1 and args[1:] or []))
 	logging.info(*args)
 	sys.stdout.flush()
@@ -126,6 +127,25 @@ db.create_all()
 db.session.commit()
 
 p("Done! Awaiting connections...")
+
+def populateDatabase():
+	for i in range(0,50):
+		p("round:")
+		p(i)
+		category = 1
+		image_url = "http://i.kinja-img.com/gawker-media/image/upload/s--pEKSmwzm--/c_scale,fl_progressive,q_80,w_800/1414228815325188681.jpg"
+		photo = Photo(image_url, category)
+		db.session.add(photo)
+		db.session.commit()
+		photo.flag_count_miscategorized = 4
+		photo.flag_status = FLAG_STATUS_AWAITING_REVIEW
+		photo_id = photo.id
+		p("the photo id is:")
+		p(photo_id)
+		db.session.commit()
+	return "done"	
+
+#populateDatabase()
 
 #ENDPOINTS
 #TODO: Handle the autobanning
@@ -290,18 +310,20 @@ def flag_photo():
 		photo.flag_count_spam = photo.flag_count_spam + 1
 	
 	all_flags_count = photo.flag_count_miscategorized + photo.flag_count_inappropriate + photo.flag_count_spam
+	p("all_flags_count:")
 	p(all_flags_count)
 	
 	if all_flags_count >= 3:
 		if ((now - creation_time) <= (10*60)):
-			photo.flag_status = FLAG_STATUS_AUTOBANNED
+			#photo.flag_status = FLAG_STATUS_AUTOBANNED
+			photo.flag_status = FLAG_STATUS_AWAITING_REVIEW
 			p("autobanned")
 		else:	
 			photo.flag_status = FLAG_STATUS_AWAITING_REVIEW
-			p(photo.flag_status)
 			p("awating")
 	else:
-		pass
+		#photo.flag_status = FLAG_STATUS_NONE
+		p("not flagged")
 	db.session.commit()
 	return jsonify(status="ok")
 	
@@ -347,6 +369,7 @@ def get_flagged_list():
 	entry = []
 	output = {}
 	keys = ["photo_id", "image_url", "category", "flag_count_inappropriate", "flag_count_miscategorized", "flag_count_spam"]
+	querySize = 30
 	
 	content = request.get_json(force=True)
 	username = content["username"]
@@ -355,6 +378,7 @@ def get_flagged_list():
 	if username == USERNAME and password == PASSWORD:
 		p("logged in")
 		q = db.session.query(Photo.id, Photo.image_url, Photo.category, Photo.flag_count_inappropriate, Photo.flag_count_miscategorized, Photo.flag_count_spam).filter_by(flag_status=FLAG_STATUS_AWAITING_REVIEW)
+		q = q.limit(querySize)
 		flagged_items_result = q.all()
 		p("queried:")
 		p(q)
