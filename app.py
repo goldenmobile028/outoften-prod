@@ -14,7 +14,7 @@ import logging.config
 import time
 import json
 from flask.ext.cors import CORS, cross_origin
-from random import random.randint
+import random
 
 LOGGING = {
     'version': 1,
@@ -31,8 +31,6 @@ LOGGING = {
 }
 
 logging.config.dictConfig(LOGGING)
-
-
 
 def p(*args):
 	#return
@@ -129,11 +127,35 @@ db.session.commit()
 
 p("Done! Awaiting connections...")
 
+def create_photo_record(uuid, image_url, category):
+	#create photo record	
+	photo = Photo(image_url, category)
+	db.session.add(photo)
+	db.session.commit()
+	photo_id = photo.id
+	
+	#find or create user 
+	user_check = db.session.query(User).filter(User.uuid == uuid)
+	user_exists = db.session.query(literal(True)).filter(user_check.exists()).scalar()
+	
+	if not user_exists:
+		#create user
+		user = User(uuid)
+		db.session.add(user)
+		db.session.commit()
+			
+	#store photos in exclusion table
+	exclusion = Exclude(photo_id, uuid)
+	db.session.add(exclusion)
+	db.session.commit()
+
+	return photo_id
+ 
 def populateDatabase():
 	for i in range(0,50):
 		uuid = "00001"
-		category = randint(0, 3)
-		image_url = "https://placekitten.com/200/" + str(randint(350,450))
+		category = random.randint(0, 3)
+		image_url = "https://placekitten.com/200/" + str(random.randint(350,450))
 		photo_id = create_photo_record(uuid, image_url, category)
 		
 		photo = Photo.query.get(photo_id)
@@ -146,47 +168,47 @@ def populateDatabase():
 
 	for i in range(0,50):
 		uuid = "00001"
-		category = randint(0, 3)
-		image_url = "https://placekitten.com/200/" + str(randint(350,450))
+		category = random.randint(0, 3)
+		image_url = "https://placekitten.com/200/" + str(random.randint(350,450))
 		photo_id = create_photo_record(uuid, image_url, category)
 		
 		photo = Photo.query.get(photo_id)
 
-		photo.flag_count_miscategorized = randint(3,20)
-		photo.flag_count_inappropriate = randint(0,5)
-		photo.flag_count_spam = randint(0,5)
+		photo.flag_count_miscategorized = random.randint(3,20)
+		photo.flag_count_inappropriate = random.randint(0,5)
+		photo.flag_count_spam = random.randint(0,5)
 		photo.flag_status = FLAG_STATUS_AWAITING_REVIEW
 		db.session.commit()
 
 	for i in range(0,50):
 		uuid = "00001"
-		category = randint(0, 3)
-		image_url = "https://placekitten.com/200/" + str(randint(350,450))
+		category = random.randint(0, 3)
+		image_url = "https://placekitten.com/200/" + str(random.randint(350,450))
 		photo_id = create_photo_record(uuid, image_url, category)
 		
 		photo = Photo.query.get(photo_id)
 
-		photo.flag_count_miscategorized = randint(0,5)
-		photo.flag_count_inappropriate = randint(3,20)
-		photo.flag_count_spam = randint(0,5)
+		photo.flag_count_miscategorized = random.randint(0,5)
+		photo.flag_count_inappropriate = random.randint(3,20)
+		photo.flag_count_spam = random.randint(0,5)
 		photo.flag_status = FLAG_STATUS_AWAITING_REVIEW
 		db.session.commit()
 
 	for i in range(0,50):
 		uuid = "00001"
-		category = randint(0, 3)
-		image_url = "https://placekitten.com/200/" + str(randint(350,450))
+		category = random.randint(0, 3)
+		image_url = "https://placekitten.com/200/" + str(random.randint(350,450))
 		photo_id = create_photo_record(uuid, image_url, category)
 		
 		photo = Photo.query.get(photo_id)
 
-		photo.flag_count_miscategorized = randint(0,5)
-		photo.flag_count_inappropriate = randint(0,5)
-		photo.flag_count_spam = randint(3,20)
+		photo.flag_count_miscategorized = random.randint(0,5)
+		photo.flag_count_inappropriate = random.randint(0,5)
+		photo.flag_count_spam = random.randint(3,20)
 		photo.flag_status = FLAG_STATUS_AWAITING_REVIEW
 		db.session.commit()
 
-#populateDatabase()
+populateDatabase()
 
 #ENDPOINTS
 #TODO: Handle the autobanning
@@ -218,31 +240,6 @@ def create_photo():
 	photo_id = create_photo_record(uuid, image_url, category)
 	
 	return jsonify(photo_id=photo.id)
-
-
-def create_photo_record(uuid, image_url, category):
-	#create photo record	
-	photo = Photo(image_url, category)
-	db.session.add(photo)
-	db.session.commit()
-	photo_id = photo.id
-	
-	#find or create user 
-	user_check = db.session.query(User).filter(User.uuid == uuid)
-	user_exists = db.session.query(literal(True)).filter(user_check.exists()).scalar()
-
-	if not user_exists:
-		#create user
-		user = User(uuid)
-		db.session.add(user)
-		db.session.commit()
-	
-	#store photos in exclusion table
-	exclusion = Exclude(photo_id, uuid)
-	db.session.add(exclusion)
-	db.session.commit()
-	
-	return photo_id
 	
 
 #Get list of scores
