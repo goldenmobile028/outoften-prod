@@ -436,8 +436,11 @@ def get_flagged_list():
 		output = {"status": "bad credentials"}
 		#output = dict("status" : "bad credentials")
 	
-	return json.dumps(output)		 	
-	 	 
+	return json.dumps(output)
+	
+
+	 	
+@app.route('/admin/')	 	 
 @app.route('/admin/index.html')
 def send_admin():
 	return send_from_directory("admin", "index.html")
