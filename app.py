@@ -147,7 +147,8 @@ def get_count():
 @auto.doc()
 def create_photo():
 	content = request.get_json(force=True)
-	image_url = "http://i.kinja-img.com/gawker-media/image/upload/s--pEKSmwzm--/c_scale,fl_progressive,q_80,w_800/1414228815325188681.jpg"
+	#image_url = "http://i.kinja-img.com/gawker-media/image/upload/s--pEKSmwzm--/c_scale,fl_progressive,q_80,w_800/1414228815325188681.jpg"
+	image_url = "https://s3-us-west-1.amazonaws.com/outoften9604/placeholder.jpeg"
 	category = content["category"]
 	uuid = content["uuid"]
 	
@@ -276,14 +277,23 @@ def flag_photo():
 	content = request.get_json(force=True)
 	photo_id = content['photo_id']
 	category = content['flag_category']
+	now = time.time()
+	
 	photo = Photo.query.get(photo_id)
-	if category == 1:
-		photo.flag_count_miscategorized = photo.flag_count_miscategorized + 1
-	elif category == 2:
-		photo.flag_count_inappropriate = photo.flag_count_inappropriate + 1
+	creation_time = photo.creation_timestamp
+	
+	if ((now - creation_time) <= (10*60)):
+		p("autoban")
+		photo.flag_status = FLAG_STATUS_AUTOBANNED
 	else:
-		photo.flag_count_spam = photo.flag_count_spam + 1
-	photo.flag_status = FLAG_STATUS_AWAITING_REVIEW
+		p("flag")
+		if category == 1:
+			photo.flag_count_miscategorized = photo.flag_count_miscategorized + 1
+		elif category == 2:
+			photo.flag_count_inappropriate = photo.flag_count_inappropriate + 1
+		else:
+			photo.flag_count_spam = photo.flag_count_spam + 1
+		photo.flag_status = FLAG_STATUS_AWAITING_REVIEW
 	db.session.commit()
 	return jsonify(status=200)
 	
@@ -358,5 +368,6 @@ def get_flagged_list():
 @app.route('/api/v1/documentation')
 def documentation():
     return auto.html()
-    
+
+   
 	
