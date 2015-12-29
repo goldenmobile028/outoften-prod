@@ -208,7 +208,7 @@ def populateDatabase():
 		photo.flag_status = FLAG_STATUS_AWAITING_REVIEW
 		db.session.commit()
 
-populateDatabase()
+#populateDatabase()
 
 #ENDPOINTS
 #TODO: Handle the autobanning
