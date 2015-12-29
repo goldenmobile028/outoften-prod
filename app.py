@@ -167,10 +167,12 @@ def get_count():
 @auto.doc()
 def create_photo():
 	content = request.get_json(force=True)
-	image_url = "http://i.kinja-img.com/gawker-media/image/upload/s--pEKSmwzm--/c_scale,fl_progressive,q_80,w_800/1414228815325188681.jpg"
-	#image_url = "https://s3-us-west-1.amazonaws.com/outoften9604/placeholder.jpeg"
 	category = content["category"]
 	uuid = content["uuid"]
+	if content["image_url"] == "":
+		image_url = "https://placekitten.com/200/400"	
+	else:
+		image_url = content["image_url"]
 	
 	#create photo record	
 	photo = Photo(image_url, category)
