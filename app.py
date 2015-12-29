@@ -282,18 +282,26 @@ def flag_photo():
 	photo = Photo.query.get(photo_id)
 	creation_time = photo.creation_timestamp
 	
-	if ((now - creation_time) <= (10*60)):
-		p("autoban")
-		photo.flag_status = FLAG_STATUS_AUTOBANNED
+	if category == 1:
+		photo.flag_count_miscategorized = photo.flag_count_miscategorized + 1
+	elif category == 2:
+		photo.flag_count_inappropriate = photo.flag_count_inappropriate + 1
 	else:
-		p("flag")
-		if category == 1:
-			photo.flag_count_miscategorized = photo.flag_count_miscategorized + 1
-		elif category == 2:
-			photo.flag_count_inappropriate = photo.flag_count_inappropriate + 1
-		else:
-			photo.flag_count_spam = photo.flag_count_spam + 1
-		photo.flag_status = FLAG_STATUS_AWAITING_REVIEW
+		photo.flag_count_spam = photo.flag_count_spam + 1
+	
+	all_flags_count = photo.flag_count_miscategorized + photo.flag_count_inappropriate + photo.flag_count_spam
+	p(all_flags_count)
+	
+	if all_flags_count >= 3:
+		if ((now - creation_time) <= (10*60)):
+			photo.flag_status = FLAG_STATUS_AUTOBANNED
+			p("autobanned")
+		else:	
+			photo.flag_status = FLAG_STATUS_AWAITING_REVIEW
+			p(photo.flag_status)
+			p("awating")
+	else:
+		pass
 	db.session.commit()
 	return jsonify(status="ok")
 	
