@@ -152,6 +152,7 @@ def create_photo_record(uuid, image_url, category):
 
 	return photo_id
  
+'''
 def populateDatabase():
 	for i in range(0,50):
 		uuid = "00001"
@@ -210,6 +211,7 @@ def populateDatabase():
 		db.session.commit()
 
 #populateDatabase()
+'''
 
 #ENDPOINTS
 #TODO: Handle the autobanning
