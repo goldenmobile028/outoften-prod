@@ -150,16 +150,37 @@ def create_photo_record(uuid, image_url, category):
 		p("added user")
 		db.session.commit()
 		p("committed user")
-			
-	#store photos in exclusion table
+	
+	'''		
+	#store photos in exclusion model
 	exclusion = Exclude(photo_id, uuid)
-	p("structureds exclusion")
+	p("structured exclusion")
 	db.session.add(exclusion)
-	p("commmited exclusion")
+	p("added exclusion")
 	db.session.commit()
-	p("super done with exclusion")
+	p("comiited exclusion")
+	'''
+
+	p("exclude method called")
+	hello = store_excluded_photos(photo_id, uuid)
+	#p("hello")
 
 	return photo_id
+
+def store_excluded_photos(photo_id, uuid):
+	p(photo_id)
+	p(uuid)
+	p("exclude method entered")
+	exclusion = Exclude(photo_id, uuid)
+	p("structured exclusion")
+	db.session.add(exclusion)
+	p("added exclusion")
+	db.session.commit()
+	p("comiited exclusion")
+
+	return "exclusion stored"
+
+
  
 '''
 def populateDatabase():
