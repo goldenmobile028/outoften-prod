@@ -71,7 +71,7 @@ PASSWORD						= os.environ['ADMIN_PASS']
 
 class User(db.Model):
 	id = db.Column(db.Integer, primary_key=True)
-	uuid = db.Column(db.Integer)
+	uuid = db.Column(db.String)
 
 	def __init__(self, uuid):
 		self.uuid = uuid
@@ -104,16 +104,11 @@ class Photo(db.Model):
 		self.deletion_status = DELETION_STATUS_NONE
 		self.deletion_timestamp = 0
 		
-		
-#Table that records a uuid associated with a photo id to avoid showing repeat photos 
-exclusions = db.Table('exclusions',
-	db.Column('uuid', db.Integer),
-	db.Column('photo_id', db.Integer))	
 	
-#Testing this new table
+#Exclusions Table
 class Exclude(db.Model):
 	id = db.Column(db.Integer, primary_key=True)
-	uuid = db.Column(db.Integer)
+	uuid = db.Column(db.String)
 	photo_id = db.Column(db.Integer)
 
 	def __init__(self, uuid, photo_id):
@@ -129,26 +124,40 @@ db.session.commit()
 p("Done! Awaiting connections...")
 
 def create_photo_record(uuid, image_url, category):
-	#create photo record	
+	#create photo record
+	p("entered create photo method")	
 	photo = Photo(image_url, category)
+	p("structued the photo")
 	db.session.add(photo)
+	p("added the photo")
 	db.session.commit()
+	p("commited the photo")
 	photo_id = photo.id
+	p("created photo")
 	
 	#find or create user 
 	user_check = db.session.query(User).filter(User.uuid == uuid)
+	p("looked up user")
 	user_exists = db.session.query(literal(True)).filter(user_check.exists()).scalar()
+	p("returned t/f")
+	p(user_exists)
 	
 	if not user_exists:
 		#create user
 		user = User(uuid)
+		p("created user")
 		db.session.add(user)
+		p("added user")
 		db.session.commit()
+		p("committed user")
 			
 	#store photos in exclusion table
 	exclusion = Exclude(photo_id, uuid)
+	p("stored exclusion")
 	db.session.add(exclusion)
+	p("commmited exclusion")
 	db.session.commit()
+	p("super done with exclusion")
 
 	return photo_id
  
@@ -296,6 +305,7 @@ def get_photo_list():
 	entry = []
 	keys = ["photo_id", "image_url", "category", "rating_sum", "rating_total"]
 	uuid = request.args.get('uuid')
+	category = request.args.get('category')
 	user_check = db.session.query(User).filter(User.uuid == uuid)
 	user_exists = db.session.query(literal(True)).filter(user_check.exists()).scalar()
 	querySize = 2
@@ -306,10 +316,17 @@ def get_photo_list():
 		excluded_photo_id_tuples = db.session.query(Exclude.photo_id).filter(Exclude.uuid == uuid).all()
 		excluded_photo_ids = [tuple[0] for tuple in excluded_photo_id_tuples]
 		#get photos
+		#specify fields to return
 		q = db.session.query(Photo.id, Photo.image_url, Photo.category, Photo.rating_sum, Photo.rating_total, Photo.flag_status)
+		#do not include deleted and banned photos
 		q = q.filter(Photo.flag_status != 3 and Photo.flag_status != 4 and Photo.deletion_status != 1)
+		#filter by requested category	
+		q = q.filter(Photo.category == category)
+		#do not include photos already seen
 		q = q.filter(Photo.id.notin_(excluded_photo_ids))
+		#return random results 
 		q = q.order_by(func.random())
+		#limit the query size
 		q = q.limit(querySize)
 		photos = q.all()
 	else:
@@ -319,6 +336,8 @@ def get_photo_list():
 		db.session.commit()
 		#get photos
 		q = db.session.query(Photo.id, Photo.image_url, Photo.category, Photo.rating_sum, Photo.rating_total)
+		#filter by requested category	
+		q = q.filter(Photo.category == category)
 		q = q.order_by(func.random())
 		q = q.limit(querySize)
 		photos = q.all()
