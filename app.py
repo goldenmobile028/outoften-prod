@@ -153,7 +153,7 @@ def create_photo_record(uuid, image_url, category):
 			
 	#store photos in exclusion table
 	exclusion = Exclude(photo_id, uuid)
-	p("stored exclusion")
+	p("structureds exclusion")
 	db.session.add(exclusion)
 	p("commmited exclusion")
 	db.session.commit()
@@ -161,7 +161,7 @@ def create_photo_record(uuid, image_url, category):
 
 	return photo_id
  
-'''
+
 def populateDatabase():
 	for i in range(0,50):
 		uuid = "00001"
@@ -219,8 +219,8 @@ def populateDatabase():
 		photo.flag_status = FLAG_STATUS_AWAITING_REVIEW
 		db.session.commit()
 
-#populateDatabase()
-'''
+populateDatabase()
+
 
 #ENDPOINTS
 #TODO: Handle the autobanning
