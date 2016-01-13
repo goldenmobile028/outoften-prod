@@ -73,7 +73,7 @@ class User(db.Model):
 	id = db.Column(db.Integer, primary_key=True)
 	uuid_string = db.Column(db.String)
 
-	def __init__(self, uuid):
+	def __init__(self, uuid_string):
 		self.uuid_string = uuid_string
 
 class Photo(db.Model):
@@ -111,7 +111,7 @@ class Exclude(db.Model):
 	uuid_string = db.Column(db.String)
 	photo_id = db.Column(db.Integer)
 
-	def __init__(self, uuid, photo_id):
+	def __init__(self, uuid_string, photo_id):
 		uuid_string = uuid_string
 		self.photo_id = photo_id		
 
@@ -123,7 +123,7 @@ db.session.commit()
 
 p("Done! Awaiting connections...")
 
-def create_photo_record(uuid, image_url, category):
+def create_photo_record(uuid_string, image_url, category):
 	#create photo record
 	p("entered create photo method")	
 	photo = Photo(image_url, category)
@@ -134,10 +134,6 @@ def create_photo_record(uuid, image_url, category):
 	p("commited the photo")
 	photo_id = photo.id
 	p("created photo")
-
-	#changing name 
-	uuid_string = uuid
-	p(uuid_string)
 	
 	#find or create user 
 	user_check = db.session.query(User).filter(User.uuid_string == uuid_string)
@@ -269,14 +265,13 @@ def get_count():
 def create_photo():
 	content = request.get_json(force=True)
 	category = content["category"]
-	uuid = content["uuid"]
-	uuid = str(uuid)
+	uuid_string = content["uuid"]
 	if content["image_url"] == "":
 		image_url = "https://placekitten.com/200/400"	
 	else:
 		image_url = content["image_url"]
 		
-	photo_id = create_photo_record(uuid, image_url, category)
+	photo_id = create_photo_record(uuid_string, image_url, category)
 	
 	return jsonify(photo_id=photo_id)
 	
