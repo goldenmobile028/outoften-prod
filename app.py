@@ -71,10 +71,10 @@ PASSWORD						= os.environ['ADMIN_PASS']
 
 class User(db.Model):
 	id = db.Column(db.Integer, primary_key=True)
-	uuid = db.Column(db.String)
+	uuid_string = db.Column(db.String)
 
 	def __init__(self, uuid):
-		self.uuid = uuid
+		self.uuid_string = uuid_string
 
 class Photo(db.Model):
 	id = db.Column(db.Integer, primary_key=True)
@@ -108,11 +108,11 @@ class Photo(db.Model):
 #Exclusions Table
 class Exclude(db.Model):
 	id = db.Column(db.Integer, primary_key=True)
-	uuid = db.Column(db.String)
+	uuid_string = db.Column(db.String)
 	photo_id = db.Column(db.Integer)
 
 	def __init__(self, uuid, photo_id):
-		self.uuid = uuid
+		uuid_string = uuid_string
 		self.photo_id = photo_id		
 
 #Connect to postgres
@@ -134,9 +134,13 @@ def create_photo_record(uuid, image_url, category):
 	p("commited the photo")
 	photo_id = photo.id
 	p("created photo")
+
+	#changing name 
+	uuid_string = uuid
+	p(uuid_string)
 	
 	#find or create user 
-	user_check = db.session.query(User).filter(User.uuid == uuid)
+	user_check = db.session.query(User).filter(User.uuid_string == uuid_string)
 	p("looked up user")
 	user_exists = db.session.query(literal(True)).filter(user_check.exists()).scalar()
 	p("returned t/f")
@@ -144,7 +148,8 @@ def create_photo_record(uuid, image_url, category):
 	
 	if not user_exists:
 		#create user
-		user = User(uuid)
+		p("no user exists")
+		user = User(uuid_string)
 		p("created user")
 		db.session.add(user)
 		p("added user")
@@ -162,16 +167,16 @@ def create_photo_record(uuid, image_url, category):
 	'''
 
 	p("exclude method called")
-	hello = store_excluded_photos(photo_id, uuid)
+	hello = store_excluded_photos(photo_id, uuid_string)
 	#p("hello")
 
 	return photo_id
 
-def store_excluded_photos(photo_id, uuid):
+def store_excluded_photos(photo_id, uuid_string):
 	p(photo_id)
-	p(uuid)
+	p(uuid_string)
 	p("exclude method entered")
-	exclusion = Exclude(photo_id, uuid)
+	exclusion = Exclude(photo_id, uuid_string)
 	p("structured exclusion")
 	db.session.add(exclusion)
 	p("added exclusion")
@@ -265,6 +270,7 @@ def create_photo():
 	content = request.get_json(force=True)
 	category = content["category"]
 	uuid = content["uuid"]
+	uuid = str(uuid)
 	if content["image_url"] == "":
 		image_url = "https://placekitten.com/200/400"	
 	else:
