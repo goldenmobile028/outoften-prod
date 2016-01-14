@@ -326,16 +326,16 @@ def get_photo_list():
 	retrieved_photo_ids = []
 	entry = []
 	keys = ["photo_id", "image_url", "category", "rating_sum", "rating_total"]
-	uuid = request.args.get('uuid')
+	uuid_string = request.args.get('uuid')
 	category = request.args.get('category')
-	user_check = db.session.query(User).filter(User.uuid == uuid)
+	user_check = db.session.query(User).filter(User.uuid_string == uuid_string)
 	user_exists = db.session.query(literal(True)).filter(user_check.exists()).scalar()
 	querySize = 2
 	photos = None
 
 	if user_exists:
 		#get exc list
-		excluded_photo_id_tuples = db.session.query(Exclude.photo_id).filter(Exclude.uuid == uuid).all()
+		excluded_photo_id_tuples = db.session.query(Exclude.photo_id).filter(Exclude.uuid_string == uuid_string).all()
 		excluded_photo_ids = [tuple[0] for tuple in excluded_photo_id_tuples]
 		#get photos
 		#specify fields to return
@@ -353,7 +353,7 @@ def get_photo_list():
 		photos = q.all()
 	else:
 		#create user
-		user = User(uuid)
+		user = User(uuid_string)
 		db.session.add(user)
 		db.session.commit()
 		#get photos
@@ -372,7 +372,7 @@ def get_photo_list():
 	
 	#store photos in exclusion table
 	for photo_id in retrieved_photo_ids:
-		new_exclusion = Exclude(uuid, photo_id)
+		new_exclusion = Exclude(uuid_string, photo_id)
 		db.session.add(new_exclusion)
 		db.session.commit()	
 	return json.dumps(photo_list)	
