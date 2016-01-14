@@ -112,7 +112,7 @@ class Exclude(db.Model):
 	photo_id = db.Column(db.Integer)
 
 	def __init__(self, uuid_string, photo_id):
-		uuid_string = uuid_string
+		self.uuid_string = uuid_string
 		self.photo_id = photo_id		
 
 #Connect to postgres
@@ -124,60 +124,30 @@ db.session.commit()
 p("Done! Awaiting connections...")
 
 def create_photo_record(uuid_string, image_url, category):
-	#create photo record
-	p("entered create photo method")	
+	#create photo record	
 	photo = Photo(image_url, category)
-	p("structued the photo")
 	db.session.add(photo)
-	p("added the photo")
 	db.session.commit()
-	p("commited the photo")
 	photo_id = photo.id
-	p("created photo")
 	
 	#find or create user 
 	user_check = db.session.query(User).filter(User.uuid_string == uuid_string)
-	p("looked up user")
 	user_exists = db.session.query(literal(True)).filter(user_check.exists()).scalar()
-	p("returned t/f")
-	p(user_exists)
 	
 	if not user_exists:
 		#create user
-		p("no user exists")
 		user = User(uuid_string)
-		p("created user")
 		db.session.add(user)
-		p("added user")
 		db.session.commit()
-		p("committed user")
-	
-	'''		
-	#store photos in exclusion model
-	exclusion = Exclude(photo_id, uuid)
-	p("structured exclusion")
-	db.session.add(exclusion)
-	p("added exclusion")
-	db.session.commit()
-	p("comiited exclusion")
-	'''
 
-	p("exclude method called")
-	hello = store_excluded_photos(photo_id, uuid_string)
-	#p("hello")
+	result = store_excluded_photos(photo_id, uuid_string)
 
 	return photo_id
 
 def store_excluded_photos(photo_id, uuid_string):
-	p(photo_id)
-	p(uuid_string)
-	p("exclude method entered")
-	exclusion = Exclude(photo_id, uuid_string)
-	p("structured exclusion")
+	exclusion = Exclude(uuid_string, photo_id)
 	db.session.add(exclusion)
-	p("added exclusion")
 	db.session.commit()
-	p("comiited exclusion")
 
 	return "exclusion stored"
 
