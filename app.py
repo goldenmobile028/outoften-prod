@@ -153,7 +153,7 @@ def store_excluded_photos(photo_id, uuid_string):
 
 
  
-
+'''
 def populateDatabase():
 	for i in range(0,50):
 		uuid_string = "00001"
@@ -212,7 +212,7 @@ def populateDatabase():
 		db.session.commit()
 
 populateDatabase()
-
+'''
 
 #ENDPOINTS
 #TODO: Handle the autobanning
