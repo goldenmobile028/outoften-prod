@@ -153,13 +153,13 @@ def store_excluded_photos(photo_id, uuid_string):
 
 
  
-'''
+
 def populateDatabase():
 	for i in range(0,50):
-		uuid = "00001"
+		uuid_string = "00001"
 		category = random.randint(0, 3)
 		image_url = "https://placekitten.com/200/" + str(random.randint(350,450))
-		photo_id = create_photo_record(uuid, image_url, category)
+		photo_id = create_photo_record(uuid_string, image_url, category)
 		
 		photo = Photo.query.get(photo_id)
 
@@ -170,10 +170,10 @@ def populateDatabase():
 		db.session.commit()
 
 	for i in range(0,50):
-		uuid = "00001"
+		uuid_string = "00001"
 		category = random.randint(0, 3)
 		image_url = "https://placekitten.com/200/" + str(random.randint(350,450))
-		photo_id = create_photo_record(uuid, image_url, category)
+		photo_id = create_photo_record(uuid_string, image_url, category)
 		
 		photo = Photo.query.get(photo_id)
 
@@ -184,10 +184,10 @@ def populateDatabase():
 		db.session.commit()
 
 	for i in range(0,50):
-		uuid = "00001"
+		uuid_string = "00001"
 		category = random.randint(0, 3)
 		image_url = "https://placekitten.com/200/" + str(random.randint(350,450))
-		photo_id = create_photo_record(uuid, image_url, category)
+		photo_id = create_photo_record(uuid_string, image_url, category)
 		
 		photo = Photo.query.get(photo_id)
 
@@ -198,10 +198,10 @@ def populateDatabase():
 		db.session.commit()
 
 	for i in range(0,50):
-		uuid = "00001"
+		uuid_string = "00001"
 		category = random.randint(0, 3)
 		image_url = "https://placekitten.com/200/" + str(random.randint(350,450))
-		photo_id = create_photo_record(uuid, image_url, category)
+		photo_id = create_photo_record(uuid_string, image_url, category)
 		
 		photo = Photo.query.get(photo_id)
 
@@ -212,7 +212,7 @@ def populateDatabase():
 		db.session.commit()
 
 populateDatabase()
-'''
+
 
 #ENDPOINTS
 #TODO: Handle the autobanning
