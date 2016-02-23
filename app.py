@@ -58,9 +58,9 @@ FLAG_STATUS_APPROVED			= 2
 FLAG_STATUS_BANNED				= 3
 FLAG_STATUS_AUTOBANNED			= 4
 
-CATEGORY_TYPE_LANDSCAPE			= 0
-CATEGORY_TYPE_SELFIE			= 1
-CATEGORY_TYPE_RIDES				= 2
+CATEGORY_TYPE_FUNNY				= 0
+CATEGORY_TYPE_PEOPlE			= 1
+CATEGORY_TYPE_FOOD				= 2
 CATEGORY_TYPE_RANDOM			= 3
 
 DELETION_STATUS_NONE			= 0
@@ -76,9 +76,11 @@ class User(db.Model):
 	def __init__(self, uuid_string):
 		self.uuid_string = uuid_string
 
-class Photo(db.Model):
+class Photos(db.Model):
 	id = db.Column(db.Integer, primary_key=True)
 	image_url = db.Column(db.String(2083))
+	uuid_string = db.Column(db.String)
+	instagramUserId = db.Column(db.String)
 	category = db.Column(db.Integer)
 	rating_sum = db.Column(db.Integer)
 	rating_total = db.Column(db.Integer)
@@ -91,8 +93,10 @@ class Photo(db.Model):
 	deletion_timestamp = db.Column(db.Float)
 
 	#default values	    
-	def __init__(self, image_url, category):
+	def __init__(self, image_url, category, uuid_string, instagramUserId):
 		self.image_url = image_url
+		self.uuid_string = uuid_string
+		self.instagramUserId = instagramUserId
 		self.category = category
 		self.rating_sum = 0
 		self.rating_total = 0
@@ -105,7 +109,7 @@ class Photo(db.Model):
 		self.deletion_timestamp = 0
 		
 	
-#Exclusions Table
+#Exclusions Table: Tracks which photos user has rated
 class Exclude(db.Model):
 	id = db.Column(db.Integer, primary_key=True)
 	uuid_string = db.Column(db.String)
@@ -123,12 +127,14 @@ db.session.commit()
 
 p("Done! Awaiting connections...")
 
-def create_photo_record(uuid_string, image_url, category):
-	#create photo record	
-	photo = Photo(image_url, category)
+
+
+def create_photo_record(uuid_string, image_url, category, instagramUserId):
+	#create photo record
+	photo = Photos(image_url, category, uuid_string, instagramUserId)
 	db.session.add(photo)
 	db.session.commit()
-	photo_id = photo.id
+	photo_id = photo.id	
 	
 	#find or create user 
 	user_check = db.session.query(User).filter(User.uuid_string == uuid_string)
@@ -141,8 +147,8 @@ def create_photo_record(uuid_string, image_url, category):
 		db.session.commit()
 
 	result = store_excluded_photos(photo_id, uuid_string)
-
 	return photo_id
+
 
 def store_excluded_photos(photo_id, uuid_string):
 	exclusion = Exclude(uuid_string, photo_id)
@@ -152,16 +158,16 @@ def store_excluded_photos(photo_id, uuid_string):
 	return "exclusion stored"
 
 
- 
 '''
 def populateDatabase():
 	for i in range(0,50):
 		uuid_string = "00001"
+		instagramUserId = "0"
 		category = random.randint(0, 3)
 		image_url = "https://placekitten.com/200/" + str(random.randint(350,450))
-		photo_id = create_photo_record(uuid_string, image_url, category)
+		photo_id = create_photo_record(uuid_string, image_url, category, instagramUserId)
 		
-		photo = Photo.query.get(photo_id)
+		photo = Photos.query.get(photo_id)
 
 		photo.flag_count_miscategorized = 0
 		photo.flag_count_inappropriate = 0
@@ -171,11 +177,12 @@ def populateDatabase():
 
 	for i in range(0,50):
 		uuid_string = "00001"
+		instagramUserId = "0"
 		category = random.randint(0, 3)
 		image_url = "https://placekitten.com/200/" + str(random.randint(350,450))
-		photo_id = create_photo_record(uuid_string, image_url, category)
+		photo_id = create_photo_record(uuid_string, image_url, category, instagramUserId)
 		
-		photo = Photo.query.get(photo_id)
+		photo = Photos.query.get(photo_id)
 
 		photo.flag_count_miscategorized = random.randint(3,20)
 		photo.flag_count_inappropriate = random.randint(0,5)
@@ -185,11 +192,12 @@ def populateDatabase():
 
 	for i in range(0,50):
 		uuid_string = "00001"
+		instagramUserId = "0"
 		category = random.randint(0, 3)
 		image_url = "https://placekitten.com/200/" + str(random.randint(350,450))
-		photo_id = create_photo_record(uuid_string, image_url, category)
+		photo_id = create_photo_record(uuid_string, image_url, category, instagramUserId)
 		
-		photo = Photo.query.get(photo_id)
+		photo = Photos.query.get(photo_id)
 
 		photo.flag_count_miscategorized = random.randint(0,5)
 		photo.flag_count_inappropriate = random.randint(3,20)
@@ -199,11 +207,12 @@ def populateDatabase():
 
 	for i in range(0,50):
 		uuid_string = "00001"
+		instagramUserId = "0"
 		category = random.randint(0, 3)
 		image_url = "https://placekitten.com/200/" + str(random.randint(350,450))
-		photo_id = create_photo_record(uuid_string, image_url, category)
+		photo_id = create_photo_record(uuid_string, image_url, category, instagramUserId)
 		
-		photo = Photo.query.get(photo_id)
+		photo = Photos.query.get(photo_id)
 
 		photo.flag_count_miscategorized = random.randint(0,5)
 		photo.flag_count_inappropriate = random.randint(0,5)
@@ -215,33 +224,32 @@ populateDatabase()
 '''
 
 #ENDPOINTS
-#TODO: Handle the autobanning
 
 @app.route('/')
 def hello():
-	return 'Welcome to 0ut of 10'   
+	return 'Welcome to 0ut of 10 V1.1'   
 	
 #Provide global photo count 
 @app.route('/api/v1/photos/count/')
 @auto.doc()
 def get_count():
-	count = db.session.query(db.func.count(Photo.id)).scalar()
+	count = db.session.query(db.func.count(Photos.id)).scalar()
 	return jsonify(count=count)	
 
 #Create photo record
-#TODO AWS integration
 @app.route('/api/v1/photos/', methods=['POST'])
 @auto.doc()
 def create_photo():
 	content = request.get_json(force=True)
 	category = content["category"]
 	uuid_string = content["uuid"]
+	instagramUserId = content["instagramUserId"]
 	if content["image_url"] == "":
 		image_url = "https://placekitten.com/200/400"	
 	else:
 		image_url = content["image_url"]
 		
-	photo_id = create_photo_record(uuid_string, image_url, category)
+	photo_id = create_photo_record(uuid_string, image_url, category, instagramUserId)
 	
 	return jsonify(photo_id=photo_id)
 	
@@ -253,7 +261,7 @@ def get_scores():
 	scorelist = []
 	photolist = request.values.getlist('photo_id')
 	for photo_id in photolist:
-		photo = Photo.query.get(photo_id)
+		photo = Photos.query.get(photo_id)
 		total = photo.rating_total
 		if total == 0:
 			score = {photo_id:0}
@@ -269,7 +277,7 @@ def get_scores():
 def delete_photo():
 	content = request.get_json(force=True)
 	photo_id = content["photo_id"]
-	photo = Photo.query.get(photo_id)
+	photo = Photos.query.get(photo_id)
 	photo.deletion_status = DELETION_STATUS_MARKED
 	photo.deletion_timestamp = time.time()
 	db.session.commit()
@@ -282,7 +290,7 @@ def submit_rating():
 	content = request.get_json(force=True)
 	photo_id = content["photo_id"]
 	rating = content["rating"]
-	photo = Photo.query.get(photo_id)
+	photo = Photos.query.get(photo_id)
 	photo.rating_sum = photo.rating_sum + rating 
 	photo.rating_total = photo.rating_total + 1
 	db.session.commit()	
@@ -300,7 +308,7 @@ def get_photo_list():
 	category = request.args.get('category')
 	user_check = db.session.query(User).filter(User.uuid_string == uuid_string)
 	user_exists = db.session.query(literal(True)).filter(user_check.exists()).scalar()
-	querySize = 2
+	querySize = 10
 	photos = None
 
 	if user_exists:
@@ -309,13 +317,13 @@ def get_photo_list():
 		excluded_photo_ids = [tuple[0] for tuple in excluded_photo_id_tuples]
 		#get photos
 		#specify fields to return
-		q = db.session.query(Photo.id, Photo.image_url, Photo.category, Photo.rating_sum, Photo.rating_total, Photo.flag_status)
+		q = db.session.query(Photos.id, Photos.image_url, Photos.category, Photos.rating_sum, Photos.rating_total, Photos.flag_status, Photos.deletion_status)
 		#do not include deleted and banned photos
-		q = q.filter(Photo.flag_status != 3 and Photo.flag_status != 4 and Photo.deletion_status != 1)
+		q = q.filter(Photos.flag_status != 3 and Photos.flag_status != 4 and Photos.deletion_status != 1)
 		#filter by requested category	
-		q = q.filter(Photo.category == category)
+		q = q.filter(Photos.category == category)
 		#do not include photos already seen
-		q = q.filter(Photo.id.notin_(excluded_photo_ids))
+		q = q.filter(Photos.id.notin_(excluded_photo_ids))
 		#return random results 
 		q = q.order_by(func.random())
 		#limit the query size
@@ -327,9 +335,9 @@ def get_photo_list():
 		db.session.add(user)
 		db.session.commit()
 		#get photos
-		q = db.session.query(Photo.id, Photo.image_url, Photo.category, Photo.rating_sum, Photo.rating_total)
+		q = db.session.query(Photos.id, Photos.image_url, Photos.category, Photos.rating_sum, Photos.rating_total)
 		#filter by requested category	
-		q = q.filter(Photo.category == category)
+		q = q.filter(Photos.category == category)
 		q = q.order_by(func.random())
 		q = q.limit(querySize)
 		photos = q.all()
@@ -356,7 +364,7 @@ def flag_photo():
 	category = content['flag_category']
 	now = time.time()
 	
-	photo = Photo.query.get(photo_id)
+	photo = Photos.query.get(photo_id)
 	creation_time = photo.creation_timestamp
 	
 	if category == 1:
@@ -370,8 +378,8 @@ def flag_photo():
 	
 	if all_flags_count >= 3:
 		if ((now - creation_time) <= (10*60)):
-			#photo.flag_status = FLAG_STATUS_AUTOBANNED
-			photo.flag_status = FLAG_STATUS_AWAITING_REVIEW
+			photo.flag_status = FLAG_STATUS_AUTOBANNED
+			#photo.flag_status = FLAG_STATUS_AWAITING_REVIEW
 		else:	
 			photo.flag_status = FLAG_STATUS_AWAITING_REVIEW
 	else:
@@ -379,6 +387,29 @@ def flag_photo():
 		#photo.flag_status = FLAG_STATUS_NONE
 	db.session.commit()
 	return jsonify(status="ok")
+
+#Delete Account: Hides all user's photos 
+@app.route('/api/v1/delete_account/', methods=["POST"])
+@auto.doc()
+def delete_account():
+	content = request.get_json(force=True)
+	uuid_string = content['uuid']
+	
+	delete_tuples = []
+
+	q = db.session.query(Photos.id)
+	q = q.filter(Photos.uuid_string == uuid_string)
+	delete_tuples = q.all()
+
+	delete_list = [tuple[0] for tuple in delete_tuples]
+
+	for photo_id in delete_list:
+		photo = Photos.query.get(photo_id)
+		photo.deletion_status = DELETION_STATUS_MARKED
+		photo.deletion_timestamp = time.time()
+		db.session.commit()	
+
+	return jsonify(status="ok")	
 	
 #Submit Moderation (Admin Interface) 
 @app.route('/api/v1/admin/submit_moderation/', methods=["POST"])
@@ -429,7 +460,7 @@ def get_flagged_list():
 	password = content["password"]
 	
 	if username == USERNAME and password == PASSWORD:
-		q = db.session.query(Photo.id, Photo.image_url, Photo.category, Photo.flag_count_inappropriate, Photo.flag_count_miscategorized, Photo.flag_count_spam).filter_by(flag_status=FLAG_STATUS_AWAITING_REVIEW)
+		q = db.session.query(Photos.id, Photos.image_url, Photos.category, Photos.flag_count_inappropriate, Photos.flag_count_miscategorized, Photos.flag_count_spam).filter_by(flag_status=FLAG_STATUS_AWAITING_REVIEW)
 		q = q.limit(querySize)
 		flagged_items_result = q.all()
 		
@@ -476,5 +507,5 @@ def send_admin_src(src):
 def documentation():
     return auto.html()
 
-   
+
 	
