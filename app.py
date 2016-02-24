@@ -317,7 +317,7 @@ def get_photo_list():
 		excluded_photo_ids = [tuple[0] for tuple in excluded_photo_id_tuples]
 		#get photos
 		#specify fields to return
-		q = db.session.query(Photos.id, Photos.image_url, Photos.category, Photos.rating_sum, Photos.rating_total, Photos.flag_status, Photos.deletion_status, Photos.instagramUserId)
+		q = db.session.query(Photos.id, Photos.image_url, Photos.category, Photos.rating_sum, Photos.rating_total, Photos.instagramUserId, Photos.flag_status, Photos.deletion_status)
 		#do not include deleted and banned photos
 		q = q.filter(Photos.flag_status != 3 and Photos.flag_status != 4 and Photos.deletion_status != 1)
 		#filter by requested category	
@@ -335,7 +335,7 @@ def get_photo_list():
 		db.session.add(user)
 		db.session.commit()
 		#get photos
-		q = db.session.query(Photos.id, Photos.image_url, Photos.category, Photos.rating_sum, Photos.rating_total, Photos.flag_status, Photos.deletion_status, Photos.instagramUserId)
+		q = db.session.query(Photos.id, Photos.image_url, Photos.category, Photos.rating_sum, Photos.rating_total, Photos.instagramUserId, Photos.flag_status, Photos.deletion_status)
 		#do not include deleted and banned photos
 		q = q.filter(Photos.flag_status != 3 and Photos.flag_status != 4 and Photos.deletion_status != 1)
 		#filter by requested category	
