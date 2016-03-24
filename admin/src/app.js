@@ -14,7 +14,7 @@ var timeoutDuration = 10000;
 
 /***** API *****/
 
-//var serverUrl = "https://outoften-staging.herokuapp.com";
+//var serverUrl = "https://outoften-prod.herokuapp.com";
 var serverUrl = "../";
 var apiBase = "/api/v1/";
 var loginEndpoint = "admin/login/";
