@@ -41,7 +41,7 @@ DELETION_STATUS_MARKED			= 1
 USERNAME						= "admin"
 PASSWORD						= os.environ['ADMIN_PASS']
 
-#Models
+#Models 
 class User(db.Model):
 	id = db.Column(db.Integer, primary_key=True)
 	uuid_string = db.Column(db.String)
@@ -92,7 +92,7 @@ db.create_all()
 db.session.commit()
 
 
-#Create Record Function
+#Create Photo Record Function
 def create_photo_record(uuid_string, image_url, category):
 	#create photo record	
 	photo = Photo(image_url, category)
