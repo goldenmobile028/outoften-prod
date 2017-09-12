@@ -1,4 +1,4 @@
-#from app import db 
+#from app import db
 
 #MODELS
 
@@ -21,12 +21,12 @@
 
 #	def __init__(self, uuid):
 #		self.uuid = uuid
-	
+
 #	def __repr__(self):
-#        return self.uuid	 
+#        return self.uuid
 
 
-#Table that records a uuid associated with a photo id to avoid showing repeat photos 
+#Table that records a uuid associated with a photo id to avoid showing repeat photos
 #exclusions = db.Table('exclusions',
 #	db.Column('uuid', db.Integer),
 #	db.Column('photo_id', db.Integer))
@@ -36,10 +36,9 @@
 #    id = db.Column(db.Integer, primary_key=True)
 #    image_url = db.Column(db.Text)
 #    category = db.Column(db.Integer)
-#	rating_sum = db.Column(db.Integer)
+#	 rating_sum = db.Column(db.Integer)
 #    rating_total = db.Column(db.Integer)
 #    creation_date = db.Column(db.DateTime)
 #    flag_count_inappropriate = db.Column(db.Integer)
 #    flag_count_miscategorized = db.Column(db.Integer)
 #    flag_status = db.Column(db.Integer)
-    	   

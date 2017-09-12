@@ -8,7 +8,7 @@ from sqlalchemy import Column, Integer, String, ForeignKey
 from sqlalchemy.orm import relationship, backref
 from flask import jsonify
 from flask import request
-from flask import send_from_directory 
+from flask import send_from_directory
 import urlparse
 import logging
 import logging.handlers
@@ -49,8 +49,9 @@ def p(*args):
 app = Flask(__name__, static_url_path='')
 cors = CORS(app)
 app.config['CORS_HEADERS'] = 'Content-Type'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
 db = SQLAlchemy(app)
-p("test the logging")
+
 
 #Variables
 
@@ -71,11 +72,13 @@ DELETION_STATUS_MARKED			= 1
 USERNAME						= "admin"
 PASSWORD						= os.environ['ADMIN_PASS']
 
-#Models 
+p("test the logging")
+
+#Models
 class User(db.Model):
 	id = db.Column(db.Integer, primary_key=True)
 	uuid_string = db.Column(db.String)
-	
+
 	uploaded_photos = db.relationship('Photo', backref='user')
 	viewed_photos = db.relationship('Exclude', backref='user')
 	blocked_users = db.relationship('Block', backref='blocked_user', primaryjoin='User.id==Block.user_id', lazy='dynamic')
@@ -99,7 +102,7 @@ class Photo(db.Model):
 	deletion_timestamp = db.Column(db.Float)
 	exclusions = db.relationship('Exclude', backref='photo')
 
-	#default values	    
+	#default values
 	def __init__(self, image_url, category):
 		self.image_url = image_url
 		self.category = category
@@ -114,7 +117,7 @@ class Photo(db.Model):
 		self.deletion_timestamp = 0
 
 #Do not show a user a photo more than once.
-#Placeholder column 
+#Placeholder column
 class Exclude(db.Model):
 	id = db.Column(db.Integer, primary_key=True)
 	user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
@@ -139,7 +142,8 @@ class Block(db.Model):
 		self.placeholder = 0
 
 #Connect to postgres
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['POSTGRES_URL']
+# app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['POSTGRES_URL']
+app.config['SQLALCHEMY_DATABASE_URI'] = "postgres://localhost:5432/dckn2j5felndns"
 db.create_all()
 db.session.commit()
 
@@ -159,15 +163,15 @@ def create_photo_record(uuid_string, image_url, category):
 
 	#don't show a user his own photo
 	hide = hide_photo(photo, user)
-	
+
 	return photo
 
 #With no user accounts desired, we have to find or create user "A" upon either 1. creating a photo record or 2. blocking another user "B" 3.viewing/rating photos
 #OK
 def find_or_create_user(uuid_string):
-	
+
 	user = db.session.query(User).filter(User.uuid_string == uuid_string).first()
-	
+
 	if not user:
 		#create the user
 		user = User(uuid_string = uuid_string)
@@ -175,13 +179,13 @@ def find_or_create_user(uuid_string):
 		db.session.commit()
 	else:
 		pass
-	
-	return user 		 
+
+	return user
 
 #OK
 def hide_photo(photo, user):
 	p("hide_photo entered")
-	
+
 	hide = Exclude()
 	hide.user = user
 	hide.photo = photo
@@ -201,9 +205,9 @@ def hide_photo_list(hide_photo_list, user):
 
 	return "done"
 
-#OK 
+#OK
 def block_user(uuid_string, photo_id):
-	#call find_or_create_user to find the blocker's user id 
+	#call find_or_create_user to find the blocker's user id
 	p("in the block user function")
 	user = find_or_create_user(uuid_string)
 
@@ -215,38 +219,38 @@ def block_user(uuid_string, photo_id):
 	block = Block()
 	block.user = user
 	block.blocked_user = blocked
-	
+
 	db.session.add(block)
 	db.session.commit()
 
-	return "user blocked" 	
+	return "user blocked"
 
 #OK
 def update_flag_status(photo_id, creation_time):
 	now = time.time()
 	photo = Photo.query.get(photo_id)
-	
+
 	if ((now - creation_time) <= (10*60)):
 		photo.flag_status = FLAG_STATUS_AUTOBANNED
 	else:
 		photo.flag_status = FLAG_STATUS_AWAITING_REVIEW
 
-	db.session.commit()	
+	db.session.commit()
 
-	return "ok"	
+	return "ok"
 
 #API ENDPOINTS
 #OK
 @app.route('/')
 def hello():
-	return 'Welcome to 0ut of 10'   
-	
-#Provide global photo count 
+	return 'Welcome to 0ut of 10'
+
+#Provide global photo count
 #OK
 @app.route('/api/v1/photos/count/')
 def get_count():
 	count = db.session.query(db.func.count(Photo.id)).scalar()
-	return jsonify(count=count)	
+	return jsonify(count=count)
 
 
 #Create photo record endpoint
@@ -254,13 +258,14 @@ def get_count():
 @app.route('/api/v1/photos/', methods=['POST'])
 def create_photo():
 	content = request.get_json(force=True)
+    print content
 	category = content["category"]
 	uuid_string = content["uuid"]
 	image_url = content["image_url"]
 	photo = create_photo_record(uuid_string, image_url, category)
-	
+
 	return jsonify(photo_id=photo.id)
-	
+
 
 #Get list of scores
 #OK
@@ -268,7 +273,7 @@ def create_photo():
 def get_scores():
 	scorelist = []
 	photolist = request.values.getlist('photo_id')
-	
+
 	for photo_id in photolist:
 		photo = Photo.query.get(photo_id)
 		total = photo.rating_total
@@ -277,9 +282,9 @@ def get_scores():
 		else:
 			sum = photo.rating_sum
 			score = {photo_id:float(sum/total)}
-		scorelist.append(score) 	
-	
-	return json.dumps(scorelist)	
+		scorelist.append(score)
+
+	return json.dumps(scorelist)
 
 #Delete a photo
 #OK
@@ -287,30 +292,30 @@ def get_scores():
 def delete_photo():
 	content = request.get_json(force=True)
 	photo_id = content["photo_id"]
-	
+
 	photo = Photo.query.get(photo_id)
 	photo.deletion_status = DELETION_STATUS_MARKED
 	photo.deletion_timestamp = time.time()
 	db.session.commit()
-	
+
 	return jsonify(status="ok")
 
 #Submit a rating
-#OK 
+#OK
 @app.route('/api/v1/photos/rate/', methods=['POST'])
 def submit_rating():
 	content = request.get_json(force=True)
 	photo_id = content["photo_id"]
 	rating = content["rating"]
-	
-	photo = Photo.query.get(photo_id)
-	photo.rating_sum = photo.rating_sum + rating 
-	photo.rating_total = photo.rating_total + 1
-	db.session.commit()	
-	
-	return jsonify(updated_rating=photo.rating_sum, updated_total=photo.rating_total) 
 
-#Gets list of photos to rate with exclusion filter 
+	photo = Photo.query.get(photo_id)
+	photo.rating_sum = photo.rating_sum + rating
+	photo.rating_total = photo.rating_total + 1
+	db.session.commit()
+
+	return jsonify(updated_rating=photo.rating_sum, updated_total=photo.rating_total)
+
+#Gets list of photos to rate with exclusion filter
 #OK
 @app.route('/api/v1/photos/photo_list/', methods=['GET'])
 def get_photo_list():
@@ -324,29 +329,29 @@ def get_photo_list():
 	#find which photos the user has already seen
 	excluded_photo_id_tuples = db.session.query(Exclude.photo_id).filter(Exclude.user_id == user_id).all()
 	excluded_photo_ids = [tuple[0] for tuple in excluded_photo_id_tuples]
-	
+
 	#find photos authors the user has blocked
 	blocked_user_id_tuples = db.session.query(Block.blocked_id).filter(Block.user_id == user_id).all()
 	blocked_user_ids = [tuple[0] for tuple in blocked_user_id_tuples]
-	
+
 	#get photos
 	querySize = 20
 	#specify fields to return
 	q = db.session.query(Photo.id, Photo.image_url, Photo.category, Photo.rating_sum, Photo.rating_total, Photo.flag_status, Photo.user_id)
 	#do not include deleted and banned photos
 	q = q.filter(Photo.flag_status != 3 and Photo.flag_status != 4 and Photo.deletion_status == 0)
-	#filter by requested category	
+	#filter by requested category
 	q = q.filter(Photo.category == category)
 	#do not include photos already seen
 	q = q.filter(Photo.id.notin_(excluded_photo_ids))
-	#do not include photos uploaded by blocked users 
+	#do not include photos uploaded by blocked users
 	q = q.filter(Photo.user_id.notin_(blocked_user_ids))
-	#return random results 
+	#return random results
 	q = q.order_by(func.random())
 	#limit the query size
 	q = q.limit(querySize)
 	result = q.all()
-	
+
 	#prepare photo_list for json, and photo_ids for exclusion
 	photo_ids = []
 	photo_list = []
@@ -365,9 +370,9 @@ def get_photo_list():
 		photos.append(photo)
 	hide = hide_photo_list(photos, user)
 
-	return json.dumps(photo_list)	
+	return json.dumps(photo_list)
 
-#Flagging and Blocking 
+#Flagging and Blocking
 #OK, but the blocking function called doesn't work
 @app.route('/api/v1/photos/flag/', methods=["POST"])
 def flag_photo():
@@ -376,29 +381,29 @@ def flag_photo():
 	category = content['flag_category']
 	uuid_string = content['uuid']
 	now = time.time()
-	
+
 	photo = Photo.query.get(photo_id)
 	creation_time = photo.creation_timestamp
-	 
+
 	if category == 1:
 		photo.flag_count_miscategorized = photo.flag_count_miscategorized + 1
 	elif category == 2:
 		photo.flag_count_inappropriate = photo.flag_count_inappropriate + 1
-	elif category == 3:	
+	elif category == 3:
 		photo.flag_count_spam = photo.flag_count_spam + 1
 	else:
 		#call blocking function
-		block = block_user(uuid_string, photo_id)	
+		block = block_user(uuid_string, photo_id)
 
 	all_flags_count = photo.flag_count_miscategorized + photo.flag_count_inappropriate + photo.flag_count_spam
-	
+
 	if all_flags_count >= 3:
 		update_flag_status = update_flag_status(photo_id, creation_time)
 	else:
 		pass
-	
+
 	db.session.commit()
-	
+
 	return jsonify(status="ok")
 
 #Need to check this one after block is ready
@@ -410,14 +415,14 @@ def delete_account():
 
 	user = find_or_create_user(uuid_string)
 
-	#update deletion status for all user's photos 
+	#update deletion status for all user's photos
 	q = db.session.query(Photo).filter(Photo.user == user).update({'deletion_status': DELETION_STATUS_MARKED})
 	db.session.commit()
 
 	return jsonify(status="ok")
 
 
-#Submit Moderation (Admin Interface) 
+#Submit Moderation (Admin Interface)
 @app.route('/api/v1/admin/submit_moderation/', methods=["POST"])
 @cross_origin()
 def submit_moderation():
@@ -432,10 +437,10 @@ def submit_moderation():
 		db.session.commit()
 		status = "ok"
 	else:
-		status = "bad credentials"		
-	return jsonify(status=status) 
-	
-#Log In (Admin Interface) 
+		status = "bad credentials"
+	return jsonify(status=status)
+
+#Log In (Admin Interface)
 @app.route('/api/v1/admin/login/', methods=["POST"])
 @cross_origin()
 def login():
@@ -445,9 +450,9 @@ def login():
 	if username == USERNAME and password == PASSWORD:
 		status = "ok"
 	else:
-		status = "bad credentials"	
+		status = "bad credentials"
 	return jsonify(status=status)
-	
+
 #Gets list of photos to moderate (Admin Interface)
 @app.route('/api/v1/admin/flagged_list/', methods=['POST'])
 @cross_origin()
@@ -457,20 +462,20 @@ def get_flagged_list():
 	output = {}
 	keys = ["photo_id", "image_url", "category", "flag_count_inappropriate", "flag_count_miscategorized", "flag_count_spam"]
 	querySize = 30
-	
+
 	content = request.get_json(force=True)
 	username = content["username"]
 	password = content["password"]
-	
+
 	if username == USERNAME and password == PASSWORD:
 		q = db.session.query(Photo.id, Photo.image_url, Photo.category, Photo.flag_count_inappropriate, Photo.flag_count_miscategorized, Photo.flag_count_spam).filter_by(flag_status=FLAG_STATUS_AWAITING_REVIEW)
 		q = q.limit(querySize)
 		flagged_items_result = q.all()
-		
+
 		for flagged_item in flagged_items_result:
 			entry = dict(zip(keys, flagged_item))
 			flagged_list.append(entry)
-		
+
 		if len(flagged_list) == 0:
 			status = "ok"
 			output = {"status": status, "photos": flagged_list}
@@ -479,24 +484,24 @@ def get_flagged_list():
 			output = {"status": status, "photos": flagged_list}
 	else:
 		output = {"status": "bad credentials"}
-	
-	return json.dumps(output)
-	
 
-	 	
-@app.route('/admin/')	 	 
+	return json.dumps(output)
+
+
+
+@app.route('/admin/')
 @app.route('/admin/index.html')
 def send_admin():
 	return send_from_directory("admin", "index.html")
-	
+
 @app.route('/admin/css/<css>')
 def send_admin_css(css):
 	return send_from_directory("admin/css", css)
-	
+
 @app.route('/admin/img/<img>')
 def send_admin_img(img):
-	return send_from_directory("admin/img", img)	
+	return send_from_directory("admin/img", img)
 
 @app.route('/admin/src/<src>')
 def send_admin_src(src):
-	return send_from_directory("admin/src", src)				
+	return send_from_directory("admin/src", src)
