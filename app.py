@@ -142,8 +142,8 @@ class Block(db.Model):
 		self.placeholder = 0
 
 #Connect to postgres
-# app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['POSTGRES_URL']
-app.config['SQLALCHEMY_DATABASE_URI'] = "postgres://localhost:5432/dckn2j5felndns"
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['POSTGRES_URL']
+# app.config['SQLALCHEMY_DATABASE_URI'] = "postgres://localhost:5432/dckn2j5felndns"
 db.create_all()
 db.session.commit()
 
@@ -255,10 +255,11 @@ def get_count():
 
 #Create photo record endpoint
 #OK
+import logging
 @app.route('/api/v1/photos/', methods=['POST'])
 def create_photo():
 	content = request.get_json(force=True)
-    print content
+        p(content)
 	category = content["category"]
 	uuid_string = content["uuid"]
 	image_url = content["image_url"]
@@ -505,3 +506,6 @@ def send_admin_img(img):
 @app.route('/admin/src/<src>')
 def send_admin_src(src):
 	return send_from_directory("admin/src", src)
+
+if __name__=='__main__':
+    app.run()
